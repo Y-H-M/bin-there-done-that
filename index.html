@@ -1,4 +1,4 @@
-<!-- Smart Kiosk Single File App (updated for single scan + admin reposition) -->
+<!-- Smart Kiosk Single File App (Updated with Scan Lock & Inline Admin) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,153 +12,154 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
 
 <style>
-  :root{--green-1:#2ecc71;--green-2:#27ae60;--teal:#16a085;--muted:#e8f8f5;--card-radius:12px;--base-font:15px}
-  *{box-sizing:border-box}html,body{height:100%}body{font-family:Segoe UI, Roboto, Arial; margin:0;background:linear-gradient(180deg,#f6fff7 0%, #e8fff0 100%);color:#203030;font-size:var(--base-font)}
-  .app{max-width:1100px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-  header{background:rgba(255,255,255,0.98);padding:0.6rem 1rem;display:flex;gap:0.6rem;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;box-shadow:0 4px 10px rgba(0,0,0,0.06)}
-  .brand{display:flex;gap:0.6rem;align-items:center}
-  .brand h1{font-size:1rem;margin:0;color:var(--green-2);font-weight:700}
-  .nav{display:flex;gap:0.4rem}
-  .nav button{border:none;background:transparent;padding:0.45rem 0.6rem;border-radius:8px;font-weight:600;color:var(--green-2);cursor:pointer}
-  .nav button.active{background:rgba(39,174,96,0.08)}
-  .container{padding:0.9rem;flex:1;display:flex;flex-direction:column;gap:0.9rem}
-  .points-pill{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.6rem 0.9rem;border-radius:999px;display:inline-block;font-weight:700}
-  .page{display:none}.page.active{display:block}
-  .card{background:white;border-radius:var(--card-radius);padding:0.8rem;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
-  h2{font-size:1.05rem;margin:0 0 0.5rem 0;color:var(--teal)}
-  p.small{font-size:0.92rem;color:#39524f;margin:0.2rem 0}
-  .kiosk-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
-  .kiosk-item{display:flex;flex-direction:column;gap:0.35rem;padding:0.6rem;border-left:4px solid var(--green-2)}
-  .kiosk-item h3{margin:0;font-size:0.98rem;color:var(--green-2)}
-  .kiosk-item p{margin:0;font-size:0.86rem;color:#406462}
-  .kiosk-actions{display:flex;gap:0.4rem;align-items:center;justify-content:space-between}
-  .kiosk-actions button{flex:1;padding:0.45rem 0.5rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:700;font-size:0.9rem}
-  .scan-wrap{display:flex;flex-direction:column;gap:0.6rem;align-items:center}
-  .video-wrap{position:relative;width:100%;max-width:420px;height:280px;background:#000;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-  .video-wrap.scaling{transform:scale(1.12);transition:transform 220ms}
-  video#preview{width:100%;height:100%;object-fit:cover}
-  canvas#overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
-  .scan-controls{display:flex;gap:0.5rem;width:100%;max-width:420px}
-  .scan-controls button{flex:1;padding:0.6rem;border-radius:10px;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-weight:700;color:var(--green-2)}
-  .scan-result{width:100%;max-width:420px;padding:0.6rem;border-radius:10px;background:var(--muted);font-weight:600;color:#155;min-height:48px}
-  .voucher-grid{display:grid;grid-template-columns:1fr;gap:0.6rem}
-  @media(min-width:700px){ .kiosk-grid{grid-template-columns:repeat(2,1fr)} .voucher-grid{grid-template-columns:repeat(2,1fr)} }
-  .voucher-card{display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;border:2px solid rgba(39,174,96,0.06);border-radius:10px;background:linear-gradient(180deg,#fbfff9,#f4fff6)}
-  .voucher-title{font-weight:800;color:var(--green-2);font-size:1rem}
-  .voucher-cost{font-weight:800;color:var(--teal);font-size:1.05rem}
-  .voucher-actions{display:flex;gap:0.5rem}
-  .voucher-actions button{flex:1;padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800}
-  .barcode-area{display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem;border-radius:8px;background:white;align-items:center}
-  svg.barcode{max-width:100%;height:80px}
-  .leaderboard-table{width:100%;border-collapse:collapse}
-  .leaderboard-table th{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.55rem;text-align:left;font-weight:700;font-size:0.95rem}
-  .leaderboard-table td{padding:0.55rem;border-bottom:1px solid #eef}
-  .muted{color:#5f7b77;font-size:0.88rem}
-  .hidden{display:none}
-  .success{background:#2ecc71;color:#fff;padding:0.45rem;border-radius:8px;font-weight:700;text-align:center}
-  input,select{width:100%;padding:0.45rem;border-radius:8px;border:1px solid #ddd}
+:root{--green-1:#2ecc71;--green-2:#27ae60;--teal:#16a085;--muted:#e8f8f5;--card-radius:12px;--base-font:15px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{font-family:Segoe UI, Roboto, Arial;margin:0;background:linear-gradient(180deg,#f6fff7 0%, #e8fff0 100%);color:#203030;font-size:var(--base-font)}
+.app{max-width:1100px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:rgba(255,255,255,0.98);padding:0.6rem 1rem;display:flex;gap:0.6rem;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;box-shadow:0 4px 10px rgba(0,0,0,0.06)}
+.brand{display:flex;gap:0.6rem;align-items:center}
+.brand h1{font-size:1rem;margin:0;color:var(--green-2);font-weight:700}
+.nav{display:flex;gap:0.4rem}
+.nav button{border:none;background:transparent;padding:0.45rem 0.6rem;border-radius:8px;font-weight:600;color:var(--green-2);cursor:pointer}
+.nav button.active{background:rgba(39,174,96,0.08)}
+.container{padding:0.9rem;flex:1;display:flex;flex-direction:column;gap:0.9rem}
+.points-pill{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.6rem 0.9rem;border-radius:999px;display:inline-block;font-weight:700}
+.page{display:none}.page.active{display:block}
+.card{background:white;border-radius:var(--card-radius);padding:0.8rem;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+h2{font-size:1.05rem;margin:0 0 0.5rem 0;color:var(--teal)}
+p.small{font-size:0.92rem;color:#39524f;margin:0.2rem 0}
+.kiosk-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.kiosk-item{display:flex;flex-direction:column;gap:0.35rem;padding:0.6rem;border-left:4px solid var(--green-2)}
+.kiosk-item h3{margin:0;font-size:0.98rem;color:var(--green-2)}
+.kiosk-item p{margin:0;font-size:0.86rem;color:#406462}
+.kiosk-actions{display:flex;gap:0.4rem;align-items:center;justify-content:space-between}
+.kiosk-actions button{flex:1;padding:0.45rem 0.5rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:700;font-size:0.9rem}
+.scan-wrap{display:flex;flex-direction:column;gap:0.6rem;align-items:center}
+.video-wrap{position:relative;width:100%;max-width:420px;height:280px;background:#000;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.video-wrap.scaling{transform:scale(1.12);transition:transform 220ms}
+video#preview{width:100%;height:100%;object-fit:cover}
+canvas#overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.scan-controls{display:flex;gap:0.5rem;width:100%;max-width:420px}
+.scan-controls button{flex:1;padding:0.6rem;border-radius:10px;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-weight:700;color:var(--green-2)}
+.scan-result{width:100%;max-width:420px;padding:0.6rem;border-radius:10px;background:var(--muted);font-weight:600;color:#155;min-height:48px}
+.voucher-grid{display:grid;grid-template-columns:1fr;gap:0.6rem}
+@media(min-width:700px){.kiosk-grid{grid-template-columns:repeat(2,1fr)}.voucher-grid{grid-template-columns:repeat(2,1fr)}}
+.voucher-card{display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;border:2px solid rgba(39,174,96,0.06);border-radius:10px;background:linear-gradient(180deg,#fbfff9,#f4fff6)}
+.voucher-title{font-weight:800;color:var(--green-2);font-size:1rem}
+.voucher-cost{font-weight:800;color:var(--teal);font-size:1.05rem}
+.voucher-actions{display:flex;gap:0.5rem}
+.voucher-actions button{flex:1;padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800}
+.barcode-area{display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem;border-radius:8px;background:white;align-items:center}
+svg.barcode{max-width:100%;height:80px}
+.leaderboard-table{width:100%;border-collapse:collapse}
+.leaderboard-table th{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.55rem;text-align:left;font-weight:700;font-size:0.95rem}
+.leaderboard-table td{padding:0.55rem;border-bottom:1px solid #eef}
+.muted{color:#5f7b77;font-size:0.88rem}
+.hidden{display:none}
+.success{background:#2ecc71;color:#fff;padding:0.45rem;border-radius:8px;font-weight:700;text-align:center}
 </style>
 </head>
+
 <body>
-  <div class="app">
-    <header>
-      <div class="brand">
-        <h1>Bin There, Done That</h1>
-      </div>
-      <nav class="nav" aria-label="Main navigation">
-        <button data-page="home" class="active">Home</button>
-        <button data-page="scan">Scan QR</button>
-        <button data-page="redeem">Redeem</button>
-        <button data-page="leaderboard">Leaderboard</button>
-      </nav>
-    </header>
+<div class="app">
+<header>
+<div class="brand"><h1>Bin There, Done That</h1></div>
+<nav class="nav" aria-label="Main navigation">
+<button data-page="home" class="active">Home</button>
+<button data-page="scan">Scan QR</button>
+<button data-page="redeem">Redeem</button>
+<button data-page="leaderboard">Leaderboard</button>
+</nav>
+</header>
 
-    <main class="container">
-      <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:800;color:var(--green-2);font-size:0.95rem">Welcome back!</div>
-        </div>
-        <div><div class="points-pill">Your Points: <span id="userPoints">0</span></div></div>
-      </div>
+<main class="container">
+<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+<div><div style="font-weight:800;color:var(--green-2);font-size:0.95rem">Welcome back!</div></div>
+<div><div class="points-pill">Your Points: <span id="userPoints">0</span></div></div>
+</div>
 
-      <!-- HOME -->
-      <section id="home" class="page active">
-        <div class="card">
-          <h2>Our Mission</h2>
-          <p class="small">Make recycling effortless, rewarding and competitive for communities across Singapore.</p>
-        </div>
+<!-- HOME -->
+<section id="home" class="page active">
+<div class="card">
+<h2>Our Mission</h2>
+<p class="small">Make recycling effortless, rewarding and competitive for communities across Singapore.</p>
+</div>
 
-        <div class="card" style="margin-top:0.6rem">
-          <h2>Find Our Kiosks</h2>
-          <div class="kiosk-grid" style="margin-top:0.6rem">
-            <div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-            <div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-            <div class="kiosk-item card" data-lat="1.4064" data-lon="103.9022" data-id="WP"><h3>Waterway Point</h3><p>83 Punggol Central, Singapore 828761</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-            <div class="kiosk-item card" data-lat="1.3014" data-lon="103.9053" data-id="PP"><h3>Parkway Parade</h3><p>80 Marine Parade Rd, Singapore 449269</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-            <div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-          </div>
-        </div>
+<div class="card" style="margin-top:0.6rem">
+<h2 style="display:flex;justify-content:space-between;align-items:center"><span>Find Our Kiosks</span></h2>
+<div class="kiosk-grid" style="margin-top:0.6rem">
+<div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+<div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+<div class="kiosk-item card" data-lat="1.4064" data-lon="103.9022" data-id="WP"><h3>Waterway Point</h3><p>83 Punggol Central, Singapore 828761</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+<div class="kiosk-item card" data-lat="1.3014" data-lon="103.9053" data-id="PP"><h3>Parkway Parade</h3><p>80 Marine Parade Rd, Singapore 449269</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+<div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+</div>
+</div>
 
-        <!-- ADMIN permanently at bottom -->
-        <div id="adminContent" class="card" style="margin-top:0.6rem">
-          <h2>Admin - QR & Code Generator</h2>
-          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Passcode</label>
-          <input type="password" id="passcode" placeholder="Enter passcode" />
-          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Points</label>
-          <input type="number" id="qrPoints" min="1" />
-          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Location</label>
-          <select id="qrLocation"><option value="J8">Junction 8</option><option value="NP">Northpoint City</option><option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option><option value="WG">Westgate</option></select>
-          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Timestamp</label>
-          <input type="datetime-local" id="qrTime" />
-          <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button onclick="generateQR()">Generate QR</button><button onclick="generateTextCode()">Generate Text Code</button></div>
-          <div id="qrOutput" style="margin-top:0.6rem"></div>
-        </div>
+<!-- Admin section permanently on home page -->
+<div id="adminContent" class="card" style="margin-top:0.9rem">
+<h2>Admin - QR & Code Generator</h2>
+<label style="font-weight:700;color:var(--green-2);margin-top:8px">Passcode</label>
+<input type="password" id="passcode" placeholder="Enter passcode" />
+<label style="font-weight:700;color:var(--green-2);margin-top:8px">Points</label>
+<input type="number" id="qrPoints" min="1" />
+<label style="font-weight:700;color:var(--green-2);margin-top:8px">Location</label>
+<select id="qrLocation">
+<option value="J8">Junction 8</option><option value="NP">Northpoint City</option>
+<option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option>
+<option value="WG">Westgate</option></select>
+<label style="font-weight:700;color:var(--green-2);margin-top:8px">Timestamp</label>
+<input type="datetime-local" id="qrTime" />
+<div style="display:flex;gap:0.5rem;margin-top:0.6rem">
+<button onclick="generateQR()">Generate QR</button>
+<button onclick="generateTextCode()">Generate Text Code</button>
+</div>
+<div id="qrOutput" style="margin-top:0.6rem"></div>
+</div>
+</section>
 
-      </section>
+<!-- SCAN -->
+<section id="scan" class="page">
+<div class="card">
+<h2>Scan QR Code</h2>
+<p class="small">Allow camera access. Align QR code in the center - a green box will highlight when detected.</p>
+<div class="scan-wrap" style="margin-top:0.6rem">
+<div id="videoWrap" class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
+<div style="display:flex;gap:0.5rem;width:100%;max-width:420px"><button id="btnStart" onclick="startScanner()">Start</button><button id="btnStop" onclick="stopScanner()" style="background:#fff;border:1px solid #eee;color:var(--green-2)">Stop</button></div>
+<div id="scanResult" class="scan-result muted">No scan yet.</div>
+</div>
+</div>
 
-      <!-- SCAN -->
-      <section id="scan" class="page">
-        <div class="card">
-          <h2>Scan QR Code</h2>
-          <p class="small">Allow camera access. Align QR code in the center - a green box will highlight when detected.</p>
+<div class="card" style="margin-top:0.6rem">
+<h2>Enter Code Manually</h2>
+<div style="display:flex;gap:0.5rem;flex-direction:column;margin-top:0.4rem">
+<div style="display:flex;gap:0.5rem">
+<input id="manualShort" type="text" placeholder="Enter code" style="flex:1;padding:0.6rem;border-radius:8px;border:1px solid #ddd" />
+<button onclick="processManualShort()" style="padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800">Submit</button>
+</div>
+</div>
+</div>
+</section>
 
-          <div class="scan-wrap" style="margin-top:0.6rem">
-            <div id="videoWrap" class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
-            <div style="display:flex;gap:0.5rem;width:100%;max-width:420px"><button id="btnStart" onclick="startScanner()">Start</button><button id="btnStop" onclick="stopScanner()" style="background:#fff;border:1px solid #eee;color:var(--green-2)">Stop</button></div>
-            <div id="scanResult" class="scan-result muted">No scan yet.</div>
-          </div>
-        </div>
+<!-- REDEEM -->
+<section id="redeem" class="page">
+<div class="card">
+<h2>Redeem Vouchers</h2>
+<div class="voucher-grid" style="margin-top:0.6rem">
+<div class="voucher-card card" data-company="ABC" data-cost="100"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyABC</div><div class="muted">10% off min $10</div></div><div class="voucher-cost">100 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="ABC" data-cost="100">Redeem</button></div><div class="barcode-target"></div></div>
+<div class="voucher-card card" data-company="DEF" data-cost="500"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyDEF</div><div class="muted">$3 discount</div></div><div class="voucher-cost">500 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="DEF" data-cost="500">Redeem</button></div><div class="barcode-target"></div></div>
+<div class="voucher-card card" data-company="GHI" data-cost="1000"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyGHI</div><div class="muted">Free item</div></div><div class="voucher-cost">1000 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="GHI" data-cost="1000">Redeem</button></div><div class="barcode-target"></div></div>
+</div>
+</div>
+</section>
 
-        <div class="card" style="margin-top:0.6rem">
-          <h2>Enter Code Manually</h2>
-          <div style="display:flex;gap:0.5rem;flex-direction:column;margin-top:0.4rem">
-            <div style="display:flex;gap:0.5rem">
-              <input id="manualShort" type="text" placeholder="Enter code" style="flex:1;padding:0.6rem;border-radius:8px;border:1px solid #ddd" />
-              <button onclick="processManualShort()" style="padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800">Submit</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- REDEEM -->
-      <section id="redeem" class="page">
-        <div class="card">
-          <h2>Redeem Vouchers</h2>
-          <div class="voucher-grid" style="margin-top:0.6rem">
-            <div class="voucher-card card" data-company="ABC" data-cost="100"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyABC</div><div class="muted">10% off min $10</div></div><div class="voucher-cost">100 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="ABC" data-cost="100">Redeem</button></div><div class="barcode-target"></div></div>
-            <div class="voucher-card card" data-company="DEF" data-cost="500"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyDEF</div><div class="muted">$3 discount</div></div><div class="voucher-cost">500 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="DEF" data-cost="500">Redeem</button></div><div class="barcode-target"></div></div>
-            <div class="voucher-card card" data-company="GHI" data-cost="1000"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyGHI</div><div class="muted">Free item</div></div><div class="voucher-cost">1000 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="GHI" data-cost="1000">Redeem</button></div><div class="barcode-target"></div></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- LEADERBOARD -->
-      <section id="leaderboard" class="page">
-        <div class="card"><h2>Kiosk Leaderboard</h2><p class="small">Rankings based on total recycling contributions (demo values persisted in cookies).</p><table class="leaderboard-table" style="margin-top:0.6rem"><thead><tr><th>Rank</th><th>Kiosk</th><th>Total Points</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
-      </section>
-
-    </main>
-  </div>
+<!-- LEADERBOARD -->
+<section id="leaderboard" class="page">
+<div class="card"><h2>Kiosk Leaderboard</h2><p class="small">Rankings based on total recycling contributions (demo values persisted in cookies).</p><table class="leaderboard-table" style="margin-top:0.6rem"><thead><tr><th>Rank</th><th>Kiosk</th><th>Total Points</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
+</section>
+</main>
+</div>
 
 <script>
 /* Cookie helpers */
@@ -166,48 +167,37 @@ function setCookie(name,value,days=365){const d=new Date();d.setTime(d.getTime()
 function getCookie(name){const v=document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(name+"="));return v?decodeURIComponent(v.split('=')[1]):null}
 
 /* State */
-const locations={ 'J8':{name:'Junction 8'}, 'NP':{name:'Northpoint City'}, 'WP':{name:'Waterway Point'}, 'PP':{name:'Parkway Parade'}, 'WG':{name:'Westgate'} };
+const locations={J8:{name:'Junction 8'},NP:{name:'Northpoint City'},WP:{name:'Waterway Point'},PP:{name:'Parkway Parade'},WG:{name:'Westgate'}};
 function getUserPoints(){return parseInt(getCookie('userPoints'))||0}
 function setUserPoints(p){setCookie('userPoints',String(p),365);updatePointsDisplay()}
 function updatePointsDisplay(){document.getElementById('userPoints').textContent=getUserPoints()}
 
 /* Leaderboard */
-function initLeaderboard(){let data=getCookie('leaderboardData');if(!data){const d={'J8':Math.floor(Math.random()*5000)+15000,'NP':Math.floor(Math.random()*5000)+10000,'WP':Math.floor(Math.random()*5000)+12000,'PP':Math.floor(Math.random()*5000)+8000,'WG':Math.floor(Math.random()*5000)+13000};setCookie('leaderboardData',JSON.stringify(d));return d}else{return JSON.parse(data)}}
-function updateLeaderboardUI(){const data=initLeaderboard();const body=document.getElementById('leaderboardBody');const entries=Object.entries(data).sort((a,b)=>b[1]-a[1]);body.innerHTML='';entries.forEach(([id,pts],i)=>{const row=document.createElement('tr');row.innerHTML=`<td>${i+1}</td><td>${locations[id].name}</td><td>${pts}</td>`;body.appendChild(row)})}
-function updateLeaderboardPoints(loc,add){const d=initLeaderboard();if(!d[loc])d[loc]=0;d[loc]+=add;setCookie('leaderboardData',JSON.stringify(d));updateLeaderboardUI()}
+function initLeaderboard(){let data=getCookie('leaderboardData');if(!data){const d={J8:Math.floor(Math.random()*5000)+15000,NP:Math.floor(Math.random()*5000)+10000,WP:Math.floor(Math.random()*5000)+12000,PP:Math.floor(Math.random()*5000)+8000,WG:Math.floor(Math.random()*5000)+13000};setCookie('leaderboardData',JSON.stringify(d),365);return d}try{return JSON.parse(data)}catch(e){return initLeaderboard()}}
+function displayLeaderboard(){const data=initLeaderboard();const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]);const tbody=document.getElementById('leaderboardBody');tbody.innerHTML='';sorted.forEach((e,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:800">#${i+1}</td><td>${locations[e[0]].name}</td><td>${e[1].toLocaleString()} pts</td>`;tbody.appendChild(tr)})}
 
 /* Navigation */
-document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(btn.dataset.page).classList.add('active');if(btn.dataset.page==='leaderboard')updateLeaderboardUI()}));
+document.querySelectorAll('.nav button').forEach(b=>{b.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const page=b.getAttribute('data-page');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(page).classList.add('active');if(page==='leaderboard')displayLeaderboard()})});
 
-/* Directions */
-function openDirectionsFromEl(el){const parent=el.closest('.kiosk-item');const lat=parent.dataset.lat,lon=parent.dataset.lon;window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`,'_blank')}
+/* Open directions */
+function openDirectionsFromEl(el){const p=el.closest('.kiosk-item');const lat=p.dataset.lat,lon=p.dataset.lon;window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`,'_blank')}
 
 /* QR Scanner */
-let video,canvas,ctx,animId,scanning=false,stream=null;
-function startScanner(){
-  video=document.getElementById('preview');canvas=document.getElementById('overlay');ctx=canvas.getContext('2d');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{stream=s;video.srcObject=s;video.play();scanning=true;scanLoop()}).catch(e=>{document.getElementById('scanResult').textContent='Camera access denied.'});
-}
-function stopScanner(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop())}}
-function scanLoop(){if(!scanning)return;canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0,canvas.width,canvas.height);const img=ctx.getImageData(0,0,canvas.width,canvas.height);const code=jsQR(img.data,canvas.width,canvas.height);if(code){ctx.strokeStyle='lime';ctx.lineWidth=4;ctx.strokeRect(code.location.topLeftCorner.x,code.location.topLeftCorner.y,code.location.bottomRightCorner.x-code.location.topLeftCorner.x,code.location.bottomRightCorner.y-code.location.topLeftCorner.y);processScannedCode(code.data);stopScanner();return;}animId=requestAnimationFrame(scanLoop);}
-function processScannedCode(data){const out=document.getElementById('scanResult');if(!data)return;out.textContent='Scanned: '+data;const short=/^[A-Z]{2}-\d+$/.test(data);const full=/^BTD-[A-Z]{2}-\d+-\d+$/.test(data);if(short){const [loc,pts]=data.split('-');awardPoints(loc,parseInt(pts))}else if(full){const p=data.split('-');awardPoints(p[1],parseInt(p[3]))}else{out.textContent='Invalid QR code.'}}
-function processManualShort(){const code=document.getElementById('manualShort').value.trim().toUpperCase();processScannedCode(code)}
-
-/* Award Points */
-function awardPoints(loc,pts){let current=getUserPoints();current+=pts;setUserPoints(current);updateLeaderboardPoints(loc,pts);document.getElementById('scanResult').innerHTML=`<div class="success">+${pts} pts added from ${locations[loc]?.name||loc}</div>`}
+let videoStream=null,scanInterval=null,scanning=false;
+async function startScanner(){try{stopScanner();const video=document.getElementById('preview');videoStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});video.srcObject=videoStream;video.setAttribute('playsinline',true);scanning=true;const canvas=document.getElementById('overlay');const ctx=canvas.getContext('2d');canvas.width=video.videoWidth||420;canvas.height=video.videoHeight||280;scanInterval=setInterval(()=>{if(!scanning)return;canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0,canvas.width,canvas.height);const img=ctx.getImageData(0,0,canvas.width,canvas.height);const code=jsQR(img.data,img.width,img.height);if(code){handleQRResult(code.data);stopScanner()}},400)}catch(err){alert('Camera access failed or denied.')}}
+function stopScanner(){scanning=false;if(scanInterval){clearInterval(scanInterval);scanInterval=null}if(videoStream){videoStream.getTracks().forEach(t=>t.stop());videoStream=null}}
+function handleQRResult(data){try{const obj=JSON.parse(data);if(!obj.location||!obj.points)return alert('Invalid QR format');const pts=parseInt(obj.points);const current=getUserPoints()+pts;setUserPoints(current);updateLeaderboardData(obj.location,pts);document.getElementById('scanResult').innerHTML=`<div class="success">+${pts} points added (${locations[obj.location].name})!</div>`}catch(e){alert('Invalid QR code')}}function processManualShort(){const s=document.getElementById('manualShort').value.trim();if(!s)return;handleQRResult(JSON.stringify({location:s.substring(0,2).toUpperCase(),points:100}))}
+function updateLeaderboardData(loc,pts){let data=initLeaderboard();if(!data[loc])data[loc]=0;data[loc]+=pts;setCookie('leaderboardData',JSON.stringify(data),365)}
 
 /* Redeem */
-function redeemVoucher(btn){const cost=parseInt(btn.dataset.cost),company=btn.dataset.company;let pts=getUserPoints();if(pts<cost){alert('Not enough points.');return;}if(!confirm(`Redeem ${cost} pts for ${company}?`))return;pts-=cost;setUserPoints(pts);const code=company+'-'+Math.floor(Math.random()*1e8);const div=btn.closest('.voucher-card').querySelector('.barcode-target');div.innerHTML=`<div class='barcode-area'><svg class='barcode'></svg><div>${code}</div><div style='display:flex;gap:0.3rem'><button onclick='copyCode("${code}")'>Copy</button><button onclick='downloadBarcode("${code}")'>Download</button></div></div>`;JsBarcode(div.querySelector('.barcode'),code,{format:'CODE128',width:2,height:60,displayValue:false})}
-function copyCode(c){navigator.clipboard.writeText(c);alert('Code copied!')}
-function downloadBarcode(c){const s=document.querySelector(`svg.barcode`);const sData=new XMLSerializer().serializeToString(s);const canvas=document.createElement('canvas');const img=new Image();img.onload=function(){canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);const a=document.createElement('a');a.download=c+'.png';a.href=canvas.toDataURL('image/png');a.click()};img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(sData)));}
+function redeemVoucher(btn){const cost=parseInt(btn.dataset.cost);const company=btn.dataset.company;let points=getUserPoints();if(points<cost)return alert('Not enough points.');points-=cost;setUserPoints(points);const barcodeId='BC'+Math.random().toString(36).substr(2,8).toUpperCase();const parent=btn.closest('.voucher-card');const target=parent.querySelector('.barcode-target');target.innerHTML=`<div class="barcode-area"><svg class="barcode"></svg><div style="font-weight:700">${barcodeId}</div></div>`;JsBarcode(target.querySelector('svg.barcode'),barcodeId,{format:"CODE128",displayValue:false});}
 
-/* Admin Generator */
-function generateQR(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k'){alert('Wrong passcode');return;}const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const t=document.getElementById('qrTime').value;if(!pts||!loc){alert('Fill fields');return;}const ts=t?new Date(t).getTime():Date.now();const text=`BTD-${loc}-${ts}-${pts}`;const qout=document.getElementById('qrOutput');qout.innerHTML=`<div id='qrcode'></div><div>${text}</div><button onclick='copyCode("${text}")'>Copy Code</button><button onclick='downloadQR()'>Download QR</button>`;new QRCode(document.getElementById('qrcode'),{text,width:180,height:180});}
-function generateTextCode(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k'){alert('Wrong passcode');return;}const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const t=document.getElementById('qrTime').value;if(!pts||!loc){alert('Fill fields');return;}const ts=t?new Date(t).getTime():Date.now();const text=`BTD-${loc}-${ts}-${pts}`;document.getElementById('qrOutput').innerHTML=`<div class='success'>${text}</div>`}
-function downloadQR(){const c=document.querySelector('#qrcode img');if(!c)return;const a=document.createElement('a');a.href=c.src;a.download='qrcode.png';a.click();}
+/* Admin */
+function generateQR(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k')return alert('Wrong passcode');const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;const obj={location:loc,points:pts,timestamp:time};const json=JSON.stringify(obj);const output=document.getElementById('qrOutput');output.innerHTML='';const div=document.createElement('div');div.style.marginTop='10px';new QRCode(div,json);output.appendChild(div)}
+function generateTextCode(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k')return alert('Wrong passcode');const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;const obj={location:loc,points:pts,timestamp:time};document.getElementById('qrOutput').textContent=JSON.stringify(obj)}
 
 /* Init */
-updatePointsDisplay();updateLeaderboardUI();
+updatePointsDisplay();displayLeaderboard();
 </script>
 </body>
 </html>
