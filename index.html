@@ -1,157 +1,214 @@
-<!-- Smart Kiosk Single Page Application -->
+<!-- Smart Kiosk Single File App (updated) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Kiosk</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Bin There, Done That</title>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.5/JsBarcode.all.min.js"></script>
+
 <style>
-body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f4f4; }
-.page { display: none; padding: 20px; }
-.active { display: block; }
-header { background-color: #004aad; color: white; text-align: center; padding: 15px; font-size: 1.2rem; }
-button { padding: 10px 15px; font-size: 1rem; border: none; border-radius: 8px; background-color: #004aad; color: white; cursor: pointer; width: 100%; margin-top: 10px; }
-.container { max-width: 500px; margin: auto; }
-input { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
-.qr-preview { width: 100%; height: 250px; background: #ddd; display: flex; align-items: center; justify-content: center; border-radius: 10px; position: relative; }
-.qr-box { position: absolute; border: 4px solid lime; box-sizing: border-box; display: none; }
-.hide { display: none; }
-.barcode-box { margin-top: 15px; padding: 10px; border: 1px dashed #004aad; text-align: center; border-radius: 10px; }
+  :root{--green-1:#2ecc71;--green-2:#27ae60;--teal:#16a085;--muted:#e8f8f5;--card-radius:12px;--base-font:15px}
+  *{box-sizing:border-box}html,body{height:100%}body{font-family:Segoe UI, Roboto, Arial; margin:0;background:linear-gradient(180deg,#f6fff7 0%, #e8fff0 100%);color:#203030;font-size:var(--base-font)}
+  .app{max-width:1100px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+  header{background:rgba(255,255,255,0.98);padding:0.6rem 1rem;display:flex;gap:0.6rem;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40;box-shadow:0 4px 10px rgba(0,0,0,0.06)}
+  .brand{display:flex;gap:0.6rem;align-items:center}
+  .brand h1{font-size:1rem;margin:0;color:var(--green-2);font-weight:700}
+  .nav{display:flex;gap:0.4rem}
+  .nav button{border:none;background:transparent;padding:0.45rem 0.6rem;border-radius:8px;font-weight:600;color:var(--green-2);cursor:pointer}
+  .nav button.active{background:rgba(39,174,96,0.08)}
+  .container{padding:0.9rem;flex:1;display:flex;flex-direction:column;gap:0.9rem}
+  .points-pill{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.6rem 0.9rem;border-radius:999px;display:inline-block;font-weight:700}
+  .page{display:none}.page.active{display:block}
+  .card{background:white;border-radius:var(--card-radius);padding:0.8rem;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+  h2{font-size:1.05rem;margin:0 0 0.5rem 0;color:var(--teal)}
+  p.small{font-size:0.92rem;color:#39524f;margin:0.2rem 0}
+  .kiosk-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+  .kiosk-item{display:flex;flex-direction:column;gap:0.35rem;padding:0.6rem;border-left:4px solid var(--green-2)}
+  .kiosk-item h3{margin:0;font-size:0.98rem;color:var(--green-2)}
+  .kiosk-item p{margin:0;font-size:0.86rem;color:#406462}
+  .kiosk-actions{display:flex;gap:0.4rem;align-items:center;justify-content:space-between}
+  .kiosk-actions button{flex:1;padding:0.45rem 0.5rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:700;font-size:0.9rem}
+  .scan-wrap{display:flex;flex-direction:column;gap:0.6rem;align-items:center}
+  .video-wrap{position:relative;width:100%;max-width:420px;height:280px;background:#000;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .video-wrap.scaling{transform:scale(1.12);transition:transform 220ms}
+  video#preview{width:100%;height:100%;object-fit:cover}
+  canvas#overlay{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+  .scan-controls{display:flex;gap:0.5rem;width:100%;max-width:420px}
+  .scan-controls button{flex:1;padding:0.6rem;border-radius:10px;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-weight:700;color:var(--green-2)}
+  .scan-result{width:100%;max-width:420px;padding:0.6rem;border-radius:10px;background:var(--muted);font-weight:600;color:#155;min-height:48px}
+  .manual-grid{display:flex;gap:0.5rem}
+  .voucher-grid{display:grid;grid-template-columns:1fr;gap:0.6rem}
+  @media(min-width:700px){ .kiosk-grid{grid-template-columns:repeat(2,1fr)} .voucher-grid{grid-template-columns:repeat(2,1fr)} }
+  .voucher-card{display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;border:2px solid rgba(39,174,96,0.06);border-radius:10px;background:linear-gradient(180deg,#fbfff9,#f4fff6)}
+  .voucher-title{font-weight:800;color:var(--green-2);font-size:1rem}
+  .voucher-cost{font-weight:800;color:var(--teal);font-size:1.05rem}
+  .voucher-actions{display:flex;gap:0.5rem}
+  .voucher-actions button{flex:1;padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800}
+  .barcode-area{display:flex;flex-direction:column;gap:0.5rem;padding:0.5rem;border-radius:8px;background:white;align-items:center}
+  svg.barcode{max-width:100%;height:80px}
+  .leaderboard-table{width:100%;border-collapse:collapse}
+  .leaderboard-table th{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.55rem;text-align:left;font-weight:700;font-size:0.95rem}
+  .leaderboard-table td{padding:0.55rem;border-bottom:1px solid #eef}
+  .admin-toggle{background:transparent;border:1px solid #eee;padding:0.3rem 0.5rem;border-radius:8px;color:#999;font-size:0.9rem}
+  .muted{color:#5f7b77;font-size:0.88rem}
+  .hidden{display:none}
+  .success{background:#2ecc71;color:#fff;padding:0.45rem;border-radius:8px;font-weight:700;text-align:center}
 </style>
 </head>
 <body>
-<header>Smart Kiosk</header>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <h1>Bin There, Done That</h1>
+      </div>
+      <nav class="nav" aria-label="Main navigation">
+        <button data-page="home" class="active">Home</button>
+        <button data-page="scan">Scan QR</button>
+        <button data-page="redeem">Redeem</button>
+        <button data-page="leaderboard">Leaderboard</button>
+        <button class="admin-toggle" onclick="toggleAdmin()">Admin</button>
+      </nav>
+    </header>
 
-<!-- Hidden Admin Unlock -->
-<div style="padding:10px; text-align:center;">
-<input type="password" id="admin-unlock" placeholder="Enter admin code" onkeypress="checkAdminUnlock(event)" />
-</div>
+    <main class="container">
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:800;color:var(--green-2);font-size:0.95rem">Welcome back!</div>
+        </div>
+        <div><div class="points-pill">Your Points: <span id="userPoints">0</span></div></div>
+      </div>
 
-<!-- Home Page -->
-<div id="home-page" class="page active">
-<div class="container">
-<button onclick="navigate('scan-page')">Scan QR</button>
-<button onclick="navigate('manual-code-page')">Enter Code Manually</button>
-<button onclick="navigate('redeem-page')">Redeem Points</button>
-</div>
-</div>
+      <!-- HOME -->
+      <section id="home" class="page active">
+        <div class="card">
+          <h2>Our Mission</h2>
+          <p class="small">Make recycling effortless, rewarding and competitive for communities across Singapore.</p>
+        </div>
 
-<!-- Scan QR Page -->
-<div id="scan-page" class="page">
-<div class="container">
-<h2>Scan QR Code</h2>
-<div class="qr-preview" id="qr-preview">Camera Loading...
-<div class="qr-box" id="qr-box"></div>
-</div>
-<button onclick="navigate('home-page')">Back</button>
-</div>
-</div>
+        <div class="card" style="margin-top:0.6rem">
+          <h2 style="display:flex;justify-content:space-between;align-items:center"><span>Find Our Kiosks</span></h2>
+          <div class="kiosk-grid" style="margin-top:0.6rem">
+            <div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+            <div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+            <div class="kiosk-item card" data-lat="1.4064" data-lon="103.9022" data-id="WP"><h3>Waterway Point</h3><p>83 Punggol Central, Singapore 828761</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+            <div class="kiosk-item card" data-lat="1.3014" data-lon="103.9053" data-id="PP"><h3>Parkway Parade</h3><p>80 Marine Parade Rd, Singapore 449269</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+            <div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+          </div>
+        </div>
+      </section>
 
-<!-- Manual Code Page -->
-<div id="manual-code-page" class="page">
-<div class="container">
-<h2>Enter Code</h2>
-<input type="text" id="manual-code" maxlength="6" placeholder="Enter code" />
-<button onclick="submitCode()">Submit</button>
-<button onclick="navigate('home-page')">Back</button>
-</div>
-</div>
+      <!-- SCAN -->
+      <section id="scan" class="page">
+        <div class="card">
+          <h2>Scan QR Code</h2>
+          <p class="small">Allow camera access. Align QR code in the center — a green box will highlight when detected.</p>
 
-<!-- Redeem Page -->
-<div id="redeem-page" class="page">
-<div class="container">
-<h2>Redeem Points</h2>
-<input type="text" id="redeem-input" placeholder="Enter voucher code" />
-<button onclick="redeem()">Redeem</button>
-<div id="barcode-section" class="barcode-box"></div>
-<button onclick="navigate('home-page')">Back</button>
-</div>
-</div>
+          <div class="scan-wrap" style="margin-top:0.6rem">
+            <div id="videoWrap" class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
+            <div style="display:flex;gap:0.5rem;width:100%;max-width:420px"><button id="btnStart" onclick="startScanner()">Start</button><button id="btnStop" onclick="stopScanner()" style="background:#fff;border:1px solid #eee;color:var(--green-2)">Stop</button></div>
+            <div id="scanResult" class="scan-result muted">No scan yet.</div>
+          </div>
+        </div>
 
-<!-- Admin Section -->
-<div id="admin-page" class="page hide" style="padding:20px;">
-<h2>Admin Section</h2>
-<input type="number" id="admin-qr-points" placeholder="Points" />
-<button onclick="generateQR()">Generate QR</button>
-<input type="text" id="admin-text-code" placeholder="Text code" />
-<button onclick="generateTextCode()">Generate Text Code</button>
-<div id="admin-output" style="margin-top:15px;"></div>
-<button onclick="navigate('home-page')">Back to Home</button>
-</div>
+        <div class="card" style="margin-top:0.6rem">
+          <h2>Enter Code Manually</h2>
+          <div style="display:flex;gap:0.5rem;flex-direction:column;margin-top:0.4rem">
+            <div style="display:flex;gap:0.5rem">
+              <input id="manualShort" type="text" placeholder="Enter code" style="flex:1;padding:0.6rem;border-radius:8px;border:1px solid #ddd" />
+              <button onclick="processManualShort()" style="padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800">Submit</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REDEEM -->
+      <section id="redeem" class="page">
+        <div class="card">
+          <h2>Redeem Vouchers</h2>
+          <div class="voucher-grid" style="margin-top:0.6rem">
+            <div class="voucher-card card" data-company="ABC" data-cost="100"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyABC</div><div class="muted">10% off min $10</div></div><div class="voucher-cost">100 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="ABC" data-cost="100">Redeem</button></div><div class="barcode-target"></div></div>
+            <div class="voucher-card card" data-company="DEF" data-cost="500"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyDEF</div><div class="muted">$3 discount</div></div><div class="voucher-cost">500 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="DEF" data-cost="500">Redeem</button></div><div class="barcode-target"></div></div>
+            <div class="voucher-card card" data-company="GHI" data-cost="1000"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="voucher-title">CompanyGHI</div><div class="muted">Free item</div></div><div class="voucher-cost">1000 pts</div></div><div class="voucher-actions" style="margin-top:0.4rem"><button onclick="redeemVoucher(this)" data-company="GHI" data-cost="1000">Redeem</button></div><div class="barcode-target"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADERBOARD -->
+      <section id="leaderboard" class="page">
+        <div class="card"><h2>Kiosk Leaderboard</h2><p class="small">Rankings based on total recycling contributions (demo values persisted in cookies).</p><table class="leaderboard-table" style="margin-top:0.6rem"><thead><tr><th>Rank</th><th>Kiosk</th><th>Total Points</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
+      </section>
+
+      <!-- ADMIN (hidden content toggled) -->
+      <div id="adminContent" class="card hidden" style="margin-top:0.6rem">
+        <h2>Admin — QR & Code Generator</h2>
+        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Passcode</label>
+        <input type="password" id="passcode" placeholder="Enter passcode" />
+        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Points</label>
+        <input type="number" id="qrPoints" min="1" />
+        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Location</label>
+        <select id="qrLocation"><option value="J8">Junction 8</option><option value="NP">Northpoint City</option><option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option><option value="WG">Westgate</option></select>
+        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Timestamp</label>
+        <input type="datetime-local" id="qrTime" />
+        <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button onclick="generateQR()">Generate QR</button><button onclick="generateTextCode()">Generate Text Code</button></div>
+        <div id="qrOutput" style="margin-top:0.6rem"></div>
+      </div>
+
+    </main>
+  </div>
 
 <script>
-let qrScanned = false;
-function navigate(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
-    if(pageId==='scan-page') startScanner();
-}
+/* Cookie helpers */
+function setCookie(name,value,days=365){const d=new Date();d.setTime(d.getTime()+days*24*60*60*1000);document.cookie=name+"="+encodeURIComponent(value)+";expires="+d.toUTCString()+";path=/"}
+function getCookie(name){const v=document.cookie.split(';').map(s=>s.trim()).find(s=>s.startsWith(name+"="));return v?decodeURIComponent(v.split('=')[1]):null}
 
-// QR Scanner Simulation
-function startScanner() {
-    qrScanned = false;
-    const box = document.getElementById('qr-box');
-    box.style.display = 'block';
-    setTimeout(() => {
-        if(!qrScanned){
-            onQRScanned('SAMPLEQR123');
-        }
-    }, 2000); // simulate scanning
-}
+/* State */
+const locations={ 'J8':{name:'Junction 8'}, 'NP':{name:'Northpoint City'}, 'WP':{name:'Waterway Point'}, 'PP':{name:'Parkway Parade'}, 'WG':{name:'Westgate'} };
+function getUserPoints(){return parseInt(getCookie('userPoints'))||0}
+function setUserPoints(p){setCookie('userPoints',String(p),365);updatePointsDisplay()}
+function updatePointsDisplay(){document.getElementById('userPoints').textContent=getUserPoints()}
 
-function onQRScanned(data) {
-    if(qrScanned) return;
-    qrScanned = true;
-    alert('QR Scanned: '+data);
-}
+/* Leaderboard */
+function initLeaderboard(){let data=getCookie('leaderboardData');if(!data){const d={'J8':Math.floor(Math.random()*5000)+15000,'NP':Math.floor(Math.random()*5000)+10000,'WP':Math.floor(Math.random()*5000)+12000,'PP':Math.floor(Math.random()*5000)+8000,'WG':Math.floor(Math.random()*5000)+13000};setCookie('leaderboardData',JSON.stringify(d),365);return d}try{return JSON.parse(data)}catch(e){return initLeaderboard()}}
+function displayLeaderboard(){const data=initLeaderboard();const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]);const tbody=document.getElementById('leaderboardBody');tbody.innerHTML='';sorted.forEach((e,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:800">#${i+1}</td><td>${locations[e[0]].name}</td><td>${e[1].toLocaleString()} pts</td>`;tbody.appendChild(tr)})}
 
-function submitCode() {
-    const input = document.getElementById('manual-code');
-    if(input.value.trim()===''){alert('Enter code'); return;}
-    alert('Code submitted: '+input.value);
-    input.value='';
-}
+/* Navigation */
+document.querySelectorAll('.nav button').forEach(b=>{b.addEventListener('click',e=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const page=b.getAttribute('data-page');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(page).classList.add('active');if(page==='leaderboard')displayLeaderboard()})})
 
-function redeem() {
-    const input = document.getElementById('redeem-input');
-    if(input.value.trim()===''){alert('Enter voucher code'); return;}
-    if(!confirm('Confirm redeem?')) return;
-    const barcodeSection = document.getElementById('barcode-section');
-    const newBarcode = document.createElement('div');
-    const code = 'BC'+Math.floor(Math.random()*1000000000);
-    newBarcode.innerHTML = `<p><strong>Redeemed:</strong> ${input.value}</p>
-<img src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${code}' alt='Barcode'>
-<p>Code: ${code}</p>
-<button onclick="copyBarcode('${code}')">Copy</button>
-<a href='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${code}' download>Download</a>
-<hr>`;
-    barcodeSection.appendChild(newBarcode);
-    input.value='';
-}
+/* Directions */
+function openDirectionsFromEl(btn){const item=btn.closest('.kiosk-item');const lat=item.getAttribute('data-lat');const lon=item.getAttribute('data-lon');if(!lat||!lon)return alert('Coordinates not available');const url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lat+','+lon)}&travelmode=walking`;window.open(url,'_blank')}
 
-function copyBarcode(code){navigator.clipboard.writeText(code); alert('Copied '+code);}
+/* Scanner */
+let stream=null,scanning=false,scanReq=null;const video=document.getElementById('preview');const overlay=document.getElementById('overlay');const ctx=overlay.getContext('2d');const videoWrap=document.getElementById('videoWrap');
+function startScanner(){if(scanning)return;navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{stream=s;video.srcObject=stream;video.play();scanning=true;overlay.width=video.offsetWidth;overlay.height=video.offsetHeight;document.getElementById('scanResult').textContent='Searching for QR...';scanLoop();}).catch(err=>{console.error(err);document.getElementById('scanResult').innerHTML='<div class="muted">Camera inaccessible. Use manual input.</div>'})}
+function stopScanner(){if(!scanning)return;scanning=false;cancelAnimationFrame(scanReq);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}ctx.clearRect(0,0,overlay.width,overlay.height);video.srcObject=null;document.getElementById('scanResult').textContent='Scanner stopped.';videoWrap.classList.remove('scaling')}
+function scanLoop(){if(!scanning)return;if(video.readyState===video.HAVE_ENOUGH_DATA){overlay.width=video.videoWidth;overlay.height=video.videoHeight;ctx.drawImage(video,0,0,overlay.width,overlay.height);try{const imageData=ctx.getImageData(0,0,overlay.width,overlay.height);const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'attemptBoth'});if(code){drawLine(code.location.topLeftCorner,code.location.topRightCorner);drawLine(code.location.topRightCorner,code.location.bottomRightCorner);drawLine(code.location.bottomRightCorner,code.location.bottomLeftCorner);drawLine(code.location.bottomLeftCorner,code.location.topLeftCorner);videoWrap.classList.add('scaling');document.getElementById('scanResult').textContent='QR detected — processing...';processQRCode(code.data);setTimeout(()=>{if(scanning){ctx.clearRect(0,0,overlay.width,overlay.height);videoWrap.classList.remove('scaling');document.getElementById('scanResult').textContent='Searching for QR...'}} ,1200);}else{ctx.clearRect(0,0,overlay.width,overlay.height);videoWrap.classList.remove('scaling')}}catch(e){console.error(e)}}scanReq=requestAnimationFrame(scanLoop)}
+function drawLine(a,b){ctx.strokeStyle='rgba(72,187,120,0.95)';ctx.lineWidth=Math.max(4,(overlay.width/320));ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
 
-// Admin unlock
-function checkAdminUnlock(event){
-    if(event.key==='Enter'){
-        const code=document.getElementById('admin-unlock').value;
-        if(code==='gimme250k'){document.getElementById('admin-page').classList.remove('hide'); document.getElementById('admin-unlock').value='';}
-        else{alert('Incorrect admin code');}
-    }
-}
+/* QR / manual processing */
+function processQRCode(code){const raw=code.trim();const shortMatch=raw.match(/^([A-Z]{1,3})[-_]?(\d{1,5})$/i);if(shortMatch){const loc=shortMatch[1].toUpperCase();const pts=parseInt(shortMatch[2],10);const ts=Date.now();handleScanResult(loc,ts,pts);return}const parts=raw.split('-');if(parts.length===4 && parts[0].toUpperCase()==='BTD'){const loc=parts[1];const ts=parts[2];const pts=parseInt(parts[3],10);handleScanResult(loc,ts,pts);return}document.getElementById('scanResult').innerHTML=`<div class="muted">Unrecognized QR:<br><small>${escapeHtml(raw)}</small></div>`}
+function handleScanResult(locationId,timestamp,points){if(!locations[locationId]){document.getElementById('scanResult').innerHTML=`<div class="muted">Invalid location: ${escapeHtml(locationId)}</div>`;return}const cur=getUserPoints();setUserPoints(cur+(isNaN(points)?0:points));document.getElementById('scanResult').innerHTML=`<div class="success">Success! ${locations[locationId].name} — +${points} pts. Total: ${getUserPoints()} pts</div>`;document.getElementById('manualShort').value=''}
+function escapeHtml(s){return(''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function processManualShort(){const v=document.getElementById('manualShort').value.trim();if(!v){alert('Please enter code');return}processQRCode(v);document.getElementById('manualShort').value=''}
 
-function generateQR(){
-    const points=document.getElementById('admin-qr-points').value || 100;
-    const qrDiv=document.getElementById('admin-output');
-    const code='BTD-'+points+'-'+Date.now();
-    qrDiv.innerHTML=`<p>QR Generated: ${code}</p><img src='https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${code}' alt='QR'>`;
-}
+/* REDEEM (append barcodes) */
+function redeemVoucher(btn){const company=btn.getAttribute('data-company');const cost=parseInt(btn.getAttribute('data-cost'),10);const current=getUserPoints();if(current<cost){alert('Insufficient points!');return}if(!confirm(`Confirm redeem ${company} for ${cost} points?`))return;btn.disabled=true;btn.style.opacity=0.6;setUserPoints(current-cost);const barcodeId=generateBarcodeId(company);const card=btn.closest('.voucher-card');const target=card.querySelector('.barcode-target');const container=document.createElement('div');container.className='barcode-area';container.innerHTML=`<div style="font-weight:800;color:#2f6d61">Voucher Redeemed!</div><div style="font-size:0.9rem" class="muted">Show this barcode at the store</div><svg class="barcode" id="svg_${barcodeId}"></svg><div style="display:flex;gap:0.4rem;width:100%"><input type="text" readonly value="${barcodeId}" id="code_${barcodeId}" style="flex:1;padding:0.45rem;border-radius:6px;border:1px solid #eee" /><button style="padding:0.45rem;border-radius:6px;border:none;background:#27ae60;color:white" onclick="copyBarcode('${barcodeId}')">Copy</button><button style="padding:0.45rem;border-radius:6px;border:none;background:#16a085;color:white" onclick="downloadBarcode('${barcodeId}')">Download</button></div>`;target.appendChild(container);JsBarcode(document.getElementById(`svg_${barcodeId}`),barcodeId,{format:"CODE128",width:2,height:60,displayValue:true});setTimeout(()=>{btn.disabled=false;btn.style.opacity=1},1200)}
+function generateBarcodeId(company){const random=Math.floor(Math.random()*1e9).toString().padStart(9,'0');let prefix='';if(company==='ABC')prefix='ABC10';if(company==='DEF')prefix='DEF3';if(company==='GHI')prefix='GHIFREE';return prefix+random}
+function copyBarcode(id){const el=document.getElementById('code_'+id);if(!el)return;el.select();try{document.execCommand('copy');alert('Barcode copied to clipboard')}catch(e){navigator.clipboard?.writeText(el.value).then(()=>alert('Copied'),()=>alert('Copy failed'))}}
+function downloadBarcode(id){const svg=document.getElementById('svg_'+id);if(!svg)return alert('Barcode not found');const svgData=new XMLSerializer().serializeToString(svg);const canvas=document.createElement('canvas');const width=600;const height=200;canvas.width=width;canvas.height=height;const ctx2=canvas.getContext('2d');const img=new Image();const svgBlob=new Blob([svgData],{type:'image/svg+xml;charset=utf-8'});const url=URL.createObjectURL(svgBlob);img.onload=function(){ctx2.fillStyle='#fff';ctx2.fillRect(0,0,canvas.width,canvas.height);const scale=Math.min(canvas.width/img.width,canvas.height/img.height);const w=img.width*scale;const h=img.height*scale;ctx2.drawImage(img,(canvas.width-w)/2,(canvas.height-h)/2,w,h);URL.revokeObjectURL(url);const png=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=png;a.download=id+'.png';document.body.appendChild(a);a.click();a.remove()};img.onerror=function(){alert('Failed to generate image');URL.revokeObjectURL(url)};img.src=url}
 
-function generateTextCode(){
-    const txt=document.getElementById('admin-text-code').value || 'ADMINCODE';
-    const qrDiv=document.getElementById('admin-output');
-    qrDiv.innerHTML=`<p>Text Code Generated: ${txt}</p>`;
-}
+/* Admin generator */
+function toggleAdmin(){const c=document.getElementById('adminContent');c.classList.toggle('hidden');if(c.classList.contains('hidden'))return;const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('qrTime').value=now.toISOString().slice(0,16)}
+function generateQR(){const pass=document.getElementById('passcode').value;const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;if(pass!=='gimme250k'){alert('Incorrect passcode!');return}if(!pts||!time){alert('Please fill in points and time');return}const timestamp=new Date(time).getTime();const code=`BTD-${loc}-${timestamp}-${pts}`;const out=document.getElementById('qrOutput');out.innerHTML=`<div style="padding:0.6rem;border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:0.5rem;align-items:center"><div id="generatedQR"></div><div style="font-family:monospace;background:#111;color:#0f0;padding:6px;border-radius:6px">${code}</div><div style="display:flex;gap:0.4rem"><button onclick="copyText('${code}')">Copy</button><a id="downloadQR" href="#" download="qr.png">Download PNG</a></div></div>`;new QRCode(document.getElementById('generatedQR'),{text:code,width:200,height:200});setTimeout(()=>{const canvas=document.querySelector('#generatedQR canvas');if(canvas){const url=canvas.toDataURL('image/png');document.getElementById('downloadQR').href=url}},150)}
+function generateTextCode(){const pass=document.getElementById('passcode').value;const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;if(pass!=='gimme250k'){alert('Incorrect passcode!');return}if(!pts||!time){alert('Please fill in points and time');return}const timestamp=new Date(time).getTime();const code=`BTD-${loc}-${timestamp}-${pts}`;const out=document.getElementById('qrOutput');out.innerHTML=`<div style="padding:0.6rem;border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:0.5rem;align-items:center"><div style="font-family:monospace;background:#111;color:#0f0;padding:6px;border-radius:6px">${code}</div><div style="display:flex;gap:0.4rem"><button onclick="copyText('${code}')">Copy</button></div></div>`}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>alert('Copied'))}
+
+/* init */
+updatePointsDisplay();displayLeaderboard();window.addEventListener('resize',()=>{overlay.width=video.videoWidth||overlay.clientWidth;overlay.height=video.videoHeight||overlay.clientHeight});
 </script>
 </body>
 </html>
