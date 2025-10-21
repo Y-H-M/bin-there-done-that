@@ -1,4 +1,4 @@
-<!-- Smart Kiosk Single File App (updated) -->
+<!-- Smart Kiosk Single File App (updated for single scan + admin reposition) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -41,7 +41,6 @@
   .scan-controls{display:flex;gap:0.5rem;width:100%;max-width:420px}
   .scan-controls button{flex:1;padding:0.6rem;border-radius:10px;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-weight:700;color:var(--green-2)}
   .scan-result{width:100%;max-width:420px;padding:0.6rem;border-radius:10px;background:var(--muted);font-weight:600;color:#155;min-height:48px}
-  .manual-grid{display:flex;gap:0.5rem}
   .voucher-grid{display:grid;grid-template-columns:1fr;gap:0.6rem}
   @media(min-width:700px){ .kiosk-grid{grid-template-columns:repeat(2,1fr)} .voucher-grid{grid-template-columns:repeat(2,1fr)} }
   .voucher-card{display:flex;flex-direction:column;gap:0.5rem;padding:0.8rem;border:2px solid rgba(39,174,96,0.06);border-radius:10px;background:linear-gradient(180deg,#fbfff9,#f4fff6)}
@@ -54,10 +53,10 @@
   .leaderboard-table{width:100%;border-collapse:collapse}
   .leaderboard-table th{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.55rem;text-align:left;font-weight:700;font-size:0.95rem}
   .leaderboard-table td{padding:0.55rem;border-bottom:1px solid #eef}
-  .admin-toggle{background:transparent;border:1px solid #eee;padding:0.3rem 0.5rem;border-radius:8px;color:#999;font-size:0.9rem}
   .muted{color:#5f7b77;font-size:0.88rem}
   .hidden{display:none}
   .success{background:#2ecc71;color:#fff;padding:0.45rem;border-radius:8px;font-weight:700;text-align:center}
+  input,select{width:100%;padding:0.45rem;border-radius:8px;border:1px solid #ddd}
 </style>
 </head>
 <body>
@@ -71,7 +70,6 @@
         <button data-page="scan">Scan QR</button>
         <button data-page="redeem">Redeem</button>
         <button data-page="leaderboard">Leaderboard</button>
-        <button class="admin-toggle" onclick="toggleAdmin()">Admin</button>
       </nav>
     </header>
 
@@ -91,7 +89,7 @@
         </div>
 
         <div class="card" style="margin-top:0.6rem">
-          <h2 style="display:flex;justify-content:space-between;align-items:center"><span>Find Our Kiosks</span></h2>
+          <h2>Find Our Kiosks</h2>
           <div class="kiosk-grid" style="margin-top:0.6rem">
             <div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
             <div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
@@ -100,13 +98,29 @@
             <div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
           </div>
         </div>
+
+        <!-- ADMIN permanently at bottom -->
+        <div id="adminContent" class="card" style="margin-top:0.6rem">
+          <h2>Admin - QR & Code Generator</h2>
+          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Passcode</label>
+          <input type="password" id="passcode" placeholder="Enter passcode" />
+          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Points</label>
+          <input type="number" id="qrPoints" min="1" />
+          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Location</label>
+          <select id="qrLocation"><option value="J8">Junction 8</option><option value="NP">Northpoint City</option><option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option><option value="WG">Westgate</option></select>
+          <label style="font-weight:700;color:var(--green-2);margin-top:8px">Timestamp</label>
+          <input type="datetime-local" id="qrTime" />
+          <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button onclick="generateQR()">Generate QR</button><button onclick="generateTextCode()">Generate Text Code</button></div>
+          <div id="qrOutput" style="margin-top:0.6rem"></div>
+        </div>
+
       </section>
 
       <!-- SCAN -->
       <section id="scan" class="page">
         <div class="card">
           <h2>Scan QR Code</h2>
-          <p class="small">Allow camera access. Align QR code in the center — a green box will highlight when detected.</p>
+          <p class="small">Allow camera access. Align QR code in the center - a green box will highlight when detected.</p>
 
           <div class="scan-wrap" style="margin-top:0.6rem">
             <div id="videoWrap" class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
@@ -143,21 +157,6 @@
         <div class="card"><h2>Kiosk Leaderboard</h2><p class="small">Rankings based on total recycling contributions (demo values persisted in cookies).</p><table class="leaderboard-table" style="margin-top:0.6rem"><thead><tr><th>Rank</th><th>Kiosk</th><th>Total Points</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
       </section>
 
-      <!-- ADMIN (hidden content toggled) -->
-      <div id="adminContent" class="card hidden" style="margin-top:0.6rem">
-        <h2>Admin — QR & Code Generator</h2>
-        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Passcode</label>
-        <input type="password" id="passcode" placeholder="Enter passcode" />
-        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Points</label>
-        <input type="number" id="qrPoints" min="1" />
-        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Location</label>
-        <select id="qrLocation"><option value="J8">Junction 8</option><option value="NP">Northpoint City</option><option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option><option value="WG">Westgate</option></select>
-        <label style="font-weight:700;color:var(--green-2);margin-top:8px">Timestamp</label>
-        <input type="datetime-local" id="qrTime" />
-        <div style="display:flex;gap:0.5rem;margin-top:0.6rem"><button onclick="generateQR()">Generate QR</button><button onclick="generateTextCode()">Generate Text Code</button></div>
-        <div id="qrOutput" style="margin-top:0.6rem"></div>
-      </div>
-
     </main>
   </div>
 
@@ -173,42 +172,42 @@ function setUserPoints(p){setCookie('userPoints',String(p),365);updatePointsDisp
 function updatePointsDisplay(){document.getElementById('userPoints').textContent=getUserPoints()}
 
 /* Leaderboard */
-function initLeaderboard(){let data=getCookie('leaderboardData');if(!data){const d={'J8':Math.floor(Math.random()*5000)+15000,'NP':Math.floor(Math.random()*5000)+10000,'WP':Math.floor(Math.random()*5000)+12000,'PP':Math.floor(Math.random()*5000)+8000,'WG':Math.floor(Math.random()*5000)+13000};setCookie('leaderboardData',JSON.stringify(d),365);return d}try{return JSON.parse(data)}catch(e){return initLeaderboard()}}
-function displayLeaderboard(){const data=initLeaderboard();const sorted=Object.entries(data).sort((a,b)=>b[1]-a[1]);const tbody=document.getElementById('leaderboardBody');tbody.innerHTML='';sorted.forEach((e,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td style="font-weight:800">#${i+1}</td><td>${locations[e[0]].name}</td><td>${e[1].toLocaleString()} pts</td>`;tbody.appendChild(tr)})}
+function initLeaderboard(){let data=getCookie('leaderboardData');if(!data){const d={'J8':Math.floor(Math.random()*5000)+15000,'NP':Math.floor(Math.random()*5000)+10000,'WP':Math.floor(Math.random()*5000)+12000,'PP':Math.floor(Math.random()*5000)+8000,'WG':Math.floor(Math.random()*5000)+13000};setCookie('leaderboardData',JSON.stringify(d));return d}else{return JSON.parse(data)}}
+function updateLeaderboardUI(){const data=initLeaderboard();const body=document.getElementById('leaderboardBody');const entries=Object.entries(data).sort((a,b)=>b[1]-a[1]);body.innerHTML='';entries.forEach(([id,pts],i)=>{const row=document.createElement('tr');row.innerHTML=`<td>${i+1}</td><td>${locations[id].name}</td><td>${pts}</td>`;body.appendChild(row)})}
+function updateLeaderboardPoints(loc,add){const d=initLeaderboard();if(!d[loc])d[loc]=0;d[loc]+=add;setCookie('leaderboardData',JSON.stringify(d));updateLeaderboardUI()}
 
 /* Navigation */
-document.querySelectorAll('.nav button').forEach(b=>{b.addEventListener('click',e=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const page=b.getAttribute('data-page');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(page).classList.add('active');if(page==='leaderboard')displayLeaderboard()})})
+document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(btn.dataset.page).classList.add('active');if(btn.dataset.page==='leaderboard')updateLeaderboardUI()}));
 
 /* Directions */
-function openDirectionsFromEl(btn){const item=btn.closest('.kiosk-item');const lat=item.getAttribute('data-lat');const lon=item.getAttribute('data-lon');if(!lat||!lon)return alert('Coordinates not available');const url=`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(lat+','+lon)}&travelmode=walking`;window.open(url,'_blank')}
+function openDirectionsFromEl(el){const parent=el.closest('.kiosk-item');const lat=parent.dataset.lat,lon=parent.dataset.lon;window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}&travelmode=walking`,'_blank')}
 
-/* Scanner */
-let stream=null,scanning=false,scanReq=null;const video=document.getElementById('preview');const overlay=document.getElementById('overlay');const ctx=overlay.getContext('2d');const videoWrap=document.getElementById('videoWrap');
-function startScanner(){if(scanning)return;navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{stream=s;video.srcObject=stream;video.play();scanning=true;overlay.width=video.offsetWidth;overlay.height=video.offsetHeight;document.getElementById('scanResult').textContent='Searching for QR...';scanLoop();}).catch(err=>{console.error(err);document.getElementById('scanResult').innerHTML='<div class="muted">Camera inaccessible. Use manual input.</div>'})}
-function stopScanner(){if(!scanning)return;scanning=false;cancelAnimationFrame(scanReq);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}ctx.clearRect(0,0,overlay.width,overlay.height);video.srcObject=null;document.getElementById('scanResult').textContent='Scanner stopped.';videoWrap.classList.remove('scaling')}
-function scanLoop(){if(!scanning)return;if(video.readyState===video.HAVE_ENOUGH_DATA){overlay.width=video.videoWidth;overlay.height=video.videoHeight;ctx.drawImage(video,0,0,overlay.width,overlay.height);try{const imageData=ctx.getImageData(0,0,overlay.width,overlay.height);const code=jsQR(imageData.data,imageData.width,imageData.height,{inversionAttempts:'attemptBoth'});if(code){drawLine(code.location.topLeftCorner,code.location.topRightCorner);drawLine(code.location.topRightCorner,code.location.bottomRightCorner);drawLine(code.location.bottomRightCorner,code.location.bottomLeftCorner);drawLine(code.location.bottomLeftCorner,code.location.topLeftCorner);videoWrap.classList.add('scaling');document.getElementById('scanResult').textContent='QR detected — processing...';processQRCode(code.data);setTimeout(()=>{if(scanning){ctx.clearRect(0,0,overlay.width,overlay.height);videoWrap.classList.remove('scaling');document.getElementById('scanResult').textContent='Searching for QR...'}} ,1200);}else{ctx.clearRect(0,0,overlay.width,overlay.height);videoWrap.classList.remove('scaling')}}catch(e){console.error(e)}}scanReq=requestAnimationFrame(scanLoop)}
-function drawLine(a,b){ctx.strokeStyle='rgba(72,187,120,0.95)';ctx.lineWidth=Math.max(4,(overlay.width/320));ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+/* QR Scanner */
+let video,canvas,ctx,animId,scanning=false,stream=null;
+function startScanner(){
+  video=document.getElementById('preview');canvas=document.getElementById('overlay');ctx=canvas.getContext('2d');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(s=>{stream=s;video.srcObject=s;video.play();scanning=true;scanLoop()}).catch(e=>{document.getElementById('scanResult').textContent='Camera access denied.'});
+}
+function stopScanner(){scanning=false;if(stream){stream.getTracks().forEach(t=>t.stop())}}
+function scanLoop(){if(!scanning)return;canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.drawImage(video,0,0,canvas.width,canvas.height);const img=ctx.getImageData(0,0,canvas.width,canvas.height);const code=jsQR(img.data,canvas.width,canvas.height);if(code){ctx.strokeStyle='lime';ctx.lineWidth=4;ctx.strokeRect(code.location.topLeftCorner.x,code.location.topLeftCorner.y,code.location.bottomRightCorner.x-code.location.topLeftCorner.x,code.location.bottomRightCorner.y-code.location.topLeftCorner.y);processScannedCode(code.data);stopScanner();return;}animId=requestAnimationFrame(scanLoop);}
+function processScannedCode(data){const out=document.getElementById('scanResult');if(!data)return;out.textContent='Scanned: '+data;const short=/^[A-Z]{2}-\d+$/.test(data);const full=/^BTD-[A-Z]{2}-\d+-\d+$/.test(data);if(short){const [loc,pts]=data.split('-');awardPoints(loc,parseInt(pts))}else if(full){const p=data.split('-');awardPoints(p[1],parseInt(p[3]))}else{out.textContent='Invalid QR code.'}}
+function processManualShort(){const code=document.getElementById('manualShort').value.trim().toUpperCase();processScannedCode(code)}
 
-/* QR / manual processing */
-function processQRCode(code){const raw=code.trim();const shortMatch=raw.match(/^([A-Z]{1,3})[-_]?(\d{1,5})$/i);if(shortMatch){const loc=shortMatch[1].toUpperCase();const pts=parseInt(shortMatch[2],10);const ts=Date.now();handleScanResult(loc,ts,pts);return}const parts=raw.split('-');if(parts.length===4 && parts[0].toUpperCase()==='BTD'){const loc=parts[1];const ts=parts[2];const pts=parseInt(parts[3],10);handleScanResult(loc,ts,pts);return}document.getElementById('scanResult').innerHTML=`<div class="muted">Unrecognized QR:<br><small>${escapeHtml(raw)}</small></div>`}
-function handleScanResult(locationId,timestamp,points){if(!locations[locationId]){document.getElementById('scanResult').innerHTML=`<div class="muted">Invalid location: ${escapeHtml(locationId)}</div>`;return}const cur=getUserPoints();setUserPoints(cur+(isNaN(points)?0:points));document.getElementById('scanResult').innerHTML=`<div class="success">Success! ${locations[locationId].name} — +${points} pts. Total: ${getUserPoints()} pts</div>`;document.getElementById('manualShort').value=''}
-function escapeHtml(s){return(''+s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function processManualShort(){const v=document.getElementById('manualShort').value.trim();if(!v){alert('Please enter code');return}processQRCode(v);document.getElementById('manualShort').value=''}
+/* Award Points */
+function awardPoints(loc,pts){let current=getUserPoints();current+=pts;setUserPoints(current);updateLeaderboardPoints(loc,pts);document.getElementById('scanResult').innerHTML=`<div class="success">+${pts} pts added from ${locations[loc]?.name||loc}</div>`}
 
-/* REDEEM (append barcodes) */
-function redeemVoucher(btn){const company=btn.getAttribute('data-company');const cost=parseInt(btn.getAttribute('data-cost'),10);const current=getUserPoints();if(current<cost){alert('Insufficient points!');return}if(!confirm(`Confirm redeem ${company} for ${cost} points?`))return;btn.disabled=true;btn.style.opacity=0.6;setUserPoints(current-cost);const barcodeId=generateBarcodeId(company);const card=btn.closest('.voucher-card');const target=card.querySelector('.barcode-target');const container=document.createElement('div');container.className='barcode-area';container.innerHTML=`<div style="font-weight:800;color:#2f6d61">Voucher Redeemed!</div><div style="font-size:0.9rem" class="muted">Show this barcode at the store</div><svg class="barcode" id="svg_${barcodeId}"></svg><div style="display:flex;gap:0.4rem;width:100%"><input type="text" readonly value="${barcodeId}" id="code_${barcodeId}" style="flex:1;padding:0.45rem;border-radius:6px;border:1px solid #eee" /><button style="padding:0.45rem;border-radius:6px;border:none;background:#27ae60;color:white" onclick="copyBarcode('${barcodeId}')">Copy</button><button style="padding:0.45rem;border-radius:6px;border:none;background:#16a085;color:white" onclick="downloadBarcode('${barcodeId}')">Download</button></div>`;target.appendChild(container);JsBarcode(document.getElementById(`svg_${barcodeId}`),barcodeId,{format:"CODE128",width:2,height:60,displayValue:true});setTimeout(()=>{btn.disabled=false;btn.style.opacity=1},1200)}
-function generateBarcodeId(company){const random=Math.floor(Math.random()*1e9).toString().padStart(9,'0');let prefix='';if(company==='ABC')prefix='ABC10';if(company==='DEF')prefix='DEF3';if(company==='GHI')prefix='GHIFREE';return prefix+random}
-function copyBarcode(id){const el=document.getElementById('code_'+id);if(!el)return;el.select();try{document.execCommand('copy');alert('Barcode copied to clipboard')}catch(e){navigator.clipboard?.writeText(el.value).then(()=>alert('Copied'),()=>alert('Copy failed'))}}
-function downloadBarcode(id){const svg=document.getElementById('svg_'+id);if(!svg)return alert('Barcode not found');const svgData=new XMLSerializer().serializeToString(svg);const canvas=document.createElement('canvas');const width=600;const height=200;canvas.width=width;canvas.height=height;const ctx2=canvas.getContext('2d');const img=new Image();const svgBlob=new Blob([svgData],{type:'image/svg+xml;charset=utf-8'});const url=URL.createObjectURL(svgBlob);img.onload=function(){ctx2.fillStyle='#fff';ctx2.fillRect(0,0,canvas.width,canvas.height);const scale=Math.min(canvas.width/img.width,canvas.height/img.height);const w=img.width*scale;const h=img.height*scale;ctx2.drawImage(img,(canvas.width-w)/2,(canvas.height-h)/2,w,h);URL.revokeObjectURL(url);const png=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=png;a.download=id+'.png';document.body.appendChild(a);a.click();a.remove()};img.onerror=function(){alert('Failed to generate image');URL.revokeObjectURL(url)};img.src=url}
+/* Redeem */
+function redeemVoucher(btn){const cost=parseInt(btn.dataset.cost),company=btn.dataset.company;let pts=getUserPoints();if(pts<cost){alert('Not enough points.');return;}if(!confirm(`Redeem ${cost} pts for ${company}?`))return;pts-=cost;setUserPoints(pts);const code=company+'-'+Math.floor(Math.random()*1e8);const div=btn.closest('.voucher-card').querySelector('.barcode-target');div.innerHTML=`<div class='barcode-area'><svg class='barcode'></svg><div>${code}</div><div style='display:flex;gap:0.3rem'><button onclick='copyCode("${code}")'>Copy</button><button onclick='downloadBarcode("${code}")'>Download</button></div></div>`;JsBarcode(div.querySelector('.barcode'),code,{format:'CODE128',width:2,height:60,displayValue:false})}
+function copyCode(c){navigator.clipboard.writeText(c);alert('Code copied!')}
+function downloadBarcode(c){const s=document.querySelector(`svg.barcode`);const sData=new XMLSerializer().serializeToString(s);const canvas=document.createElement('canvas');const img=new Image();img.onload=function(){canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);const a=document.createElement('a');a.download=c+'.png';a.href=canvas.toDataURL('image/png');a.click()};img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(sData)));}
 
-/* Admin generator */
-function toggleAdmin(){const c=document.getElementById('adminContent');c.classList.toggle('hidden');if(c.classList.contains('hidden'))return;const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());document.getElementById('qrTime').value=now.toISOString().slice(0,16)}
-function generateQR(){const pass=document.getElementById('passcode').value;const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;if(pass!=='gimme250k'){alert('Incorrect passcode!');return}if(!pts||!time){alert('Please fill in points and time');return}const timestamp=new Date(time).getTime();const code=`BTD-${loc}-${timestamp}-${pts}`;const out=document.getElementById('qrOutput');out.innerHTML=`<div style="padding:0.6rem;border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:0.5rem;align-items:center"><div id="generatedQR"></div><div style="font-family:monospace;background:#111;color:#0f0;padding:6px;border-radius:6px">${code}</div><div style="display:flex;gap:0.4rem"><button onclick="copyText('${code}')">Copy</button><a id="downloadQR" href="#" download="qr.png">Download PNG</a></div></div>`;new QRCode(document.getElementById('generatedQR'),{text:code,width:200,height:200});setTimeout(()=>{const canvas=document.querySelector('#generatedQR canvas');if(canvas){const url=canvas.toDataURL('image/png');document.getElementById('downloadQR').href=url}},150)}
-function generateTextCode(){const pass=document.getElementById('passcode').value;const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const time=document.getElementById('qrTime').value;if(pass!=='gimme250k'){alert('Incorrect passcode!');return}if(!pts||!time){alert('Please fill in points and time');return}const timestamp=new Date(time).getTime();const code=`BTD-${loc}-${timestamp}-${pts}`;const out=document.getElementById('qrOutput');out.innerHTML=`<div style="padding:0.6rem;border-radius:8px;background:#fff;display:flex;flex-direction:column;gap:0.5rem;align-items:center"><div style="font-family:monospace;background:#111;color:#0f0;padding:6px;border-radius:6px">${code}</div><div style="display:flex;gap:0.4rem"><button onclick="copyText('${code}')">Copy</button></div></div>`}
-function copyText(t){navigator.clipboard.writeText(t).then(()=>alert('Copied'))}
+/* Admin Generator */
+function generateQR(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k'){alert('Wrong passcode');return;}const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const t=document.getElementById('qrTime').value;if(!pts||!loc){alert('Fill fields');return;}const ts=t?new Date(t).getTime():Date.now();const text=`BTD-${loc}-${ts}-${pts}`;const qout=document.getElementById('qrOutput');qout.innerHTML=`<div id='qrcode'></div><div>${text}</div><button onclick='copyCode("${text}")'>Copy Code</button><button onclick='downloadQR()'>Download QR</button>`;new QRCode(document.getElementById('qrcode'),{text,width:180,height:180});}
+function generateTextCode(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k'){alert('Wrong passcode');return;}const pts=document.getElementById('qrPoints').value;const loc=document.getElementById('qrLocation').value;const t=document.getElementById('qrTime').value;if(!pts||!loc){alert('Fill fields');return;}const ts=t?new Date(t).getTime():Date.now();const text=`BTD-${loc}-${ts}-${pts}`;document.getElementById('qrOutput').innerHTML=`<div class='success'>${text}</div>`}
+function downloadQR(){const c=document.querySelector('#qrcode img');if(!c)return;const a=document.createElement('a');a.href=c.src;a.download='qrcode.png';a.click();}
 
-/* init */
-updatePointsDisplay();displayLeaderboard();window.addEventListener('resize',()=>{overlay.width=video.videoWidth||overlay.clientWidth;overlay.height=video.videoHeight||overlay.clientHeight});
+/* Init */
+updatePointsDisplay();updateLeaderboardUI();
 </script>
 </body>
 </html>
