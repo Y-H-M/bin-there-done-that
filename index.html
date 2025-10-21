@@ -12,166 +12,330 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
-:root{--green-1:#2ecc71;--green-2:#27ae60;--teal:#16a085;--muted:#e8f8f5;--card-radius:12px;--base-font:15px}
+:root{
+  --green-1:#2ecc71;
+  --green-2:#27ae60;
+  --teal:#16a085;
+  --muted:#e8f8f5;
+  --card-radius:12px;
+  --base-font:15px;
+}
 *{box-sizing:border-box}
-body{font-family:Segoe UI,Roboto,Arial;margin:0;background:linear-gradient(180deg,#f6fff7 0%, #e8fff0 100%);color:#203030;font-size:var(--base-font)}
+body{
+  font-family:Segoe UI,Roboto,Arial;
+  margin:0;
+  background:linear-gradient(180deg,#f6fff7 0%, #e8fff0 100%);
+  color:#203030;
+  font-size:var(--base-font);
+}
 .app{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;min-height:100vh}
-header{background:white;padding:0.6rem 1rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10;box-shadow:0 4px 10px rgba(0,0,0,0.06)}
+header{
+  background:white;
+  padding:0.6rem 1rem;
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:10;
+  box-shadow:0 4px 10px rgba(0,0,0,0.06)
+}
 .brand h1{font-size:1rem;margin:0;color:var(--green-2);font-weight:700}
 .nav{display:flex;gap:0.4rem}
-.nav button{border:none;background:transparent;padding:0.45rem 0.6rem;border-radius:8px;font-weight:600;color:var(--green-2);cursor:pointer}
+.nav button{
+  border:none;background:transparent;
+  padding:0.45rem 0.6rem;border-radius:8px;
+  font-weight:600;color:var(--green-2);cursor:pointer
+}
 .nav button.active{background:rgba(39,174,96,0.08)}
 .container{padding:0.9rem;flex:1;display:flex;flex-direction:column;gap:0.9rem}
-.points-pill{background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;padding:0.6rem 0.9rem;border-radius:999px;font-weight:700}
+.points-pill{
+  background:linear-gradient(90deg,var(--green-1),var(--green-2));
+  color:white;padding:0.6rem 0.9rem;border-radius:999px;font-weight:700
+}
 .page{display:none}.page.active{display:block}
-.card{background:white;border-radius:var(--card-radius);padding:0.8rem;box-shadow:0 8px 20px rgba(0,0,0,0.06)}
+.card{
+  background:white;border-radius:var(--card-radius);
+  padding:0.8rem;box-shadow:0 8px 20px rgba(0,0,0,0.06)
+}
 h2{font-size:1.05rem;margin:0 0 0.5rem;color:var(--teal)}
 p.small{font-size:0.92rem;color:#39524f;margin:0.2rem 0}
-button.reset-btn{background:#fff;border:2px solid var(--green-2);color:var(--green-2);padding:0.4rem 0.7rem;border-radius:8px;font-weight:700;cursor:pointer}
+
+/* Universal action button */
+.action-btn{
+  background:white;
+  border:none;
+  border-radius:10px;
+  padding:0.6rem 0.9rem;
+  box-shadow:0 4px 12px rgba(0,0,0,0.06);
+  font-weight:700;
+  color:var(--green-2);
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+.action-btn:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,0.1);}
+
+/* Reset button */
+button.reset-btn{
+  background:#fff;border:2px solid var(--green-2);
+  color:var(--green-2);padding:0.4rem 0.7rem;
+  border-radius:8px;font-weight:700;cursor:pointer;
+}
 button.reset-btn:hover{background:var(--green-1);color:#fff}
+
 .kiosk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:0.5rem}
 .kiosk-item h3{margin:0;color:var(--green-2)}
 .kiosk-actions button{padding:0.45rem 0.6rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:700}
+
 .scan-wrap,.voucher-grid{display:flex;flex-direction:column;gap:0.6rem;align-items:center}
 .video-wrap{position:relative;width:100%;max-width:420px;height:280px;background:#000;border-radius:10px;overflow:hidden}
 video{width:100%;height:100%;object-fit:cover}
-.scan-controls button{flex:1;padding:0.6rem;border-radius:10px;border:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.06);font-weight:700;color:var(--green-2)}
+.scan-controls button{flex:1}
+
+/* Scan result */
 .scan-result{width:100%;max-width:420px;padding:0.6rem;border-radius:10px;background:var(--muted);font-weight:600;color:#155;text-align:center}
 .success{background:#2ecc71;color:white;padding:0.45rem;border-radius:8px;font-weight:700}
-.voucher-card{background:#fbfff9;border:2px solid rgba(39,174,96,0.1);border-radius:10px;padding:0.8rem;width:100%}
-.voucher-actions button{flex:1;padding:0.55rem;border-radius:8px;border:none;background:linear-gradient(90deg,var(--green-1),var(--green-2));color:white;font-weight:800;width:100%}
-.barcode-area{background:white;padding:0.5rem;margin-top:0.5rem;border-radius:8px;display:flex;flex-direction:column;align-items:center}
+
+/* Vouchers */
+.voucher-card{
+  background:#fbfff9;border:2px solid rgba(39,174,96,0.1);
+  border-radius:10px;padding:0.8rem;width:100%;
+}
+.voucher-actions{display:flex;justify-content:center;margin-top:0.4rem}
+.voucher-actions button{width:100%}
+.barcode-area{
+  background:white;padding:0.5rem;margin-top:0.5rem;
+  border-radius:8px;display:flex;flex-direction:column;align-items:center
+}
 .barcode-area svg{height:80px}
 .download-btn{margin-top:0.3rem;padding:0.35rem 0.7rem;border:none;border-radius:8px;background:var(--green-2);color:white;font-weight:600;cursor:pointer}
+
+/* Leaderboard styling */
+.leaderboard-table{
+  width:100%;border-collapse:separate;border-spacing:0 8px;
+}
+.leaderboard-table thead tr th{
+  text-align:left;padding:0.5rem;
+  background:var(--green-2);color:white;border-radius:6px 6px 0 0;
+}
+.leaderboard-table tbody tr{
+  background:white;
+  box-shadow:0 3px 6px rgba(0,0,0,0.05);
+}
+.leaderboard-table td{
+  padding:0.6rem;
+  border-bottom:1px solid rgba(0,0,0,0.05);
+}
+.leaderboard-table td:first-child{text-align:center;width:60px;font-weight:700;color:var(--green-2)}
+.leaderboard-table td:nth-child(2){font-weight:600}
+.leaderboard-table td:last-child{text-align:right;font-weight:600;color:#155}
 </style>
 </head>
 
 <body>
 <div class="app">
 <header>
-<div class="brand"><h1>Bin There, Done That</h1></div>
-<nav class="nav">
-<button data-page="home" class="active">Home</button>
-<button data-page="scan">Scan QR</button>
-<button data-page="redeem">Redeem</button>
-<button data-page="leaderboard">Leaderboard</button>
-</nav>
+  <div class="brand"><h1>Bin There, Done That</h1></div>
+  <nav class="nav">
+    <button data-page="home" class="active">Home</button>
+    <button data-page="scan">Scan QR</button>
+    <button data-page="redeem">Redeem</button>
+    <button data-page="leaderboard">Leaderboard</button>
+  </nav>
 </header>
 
 <main class="container">
-<!-- Points + Reset -->
-<div class="card" style="display:flex;justify-content:space-between;align-items:center;">
-<div class="points-pill">Your Points: <span id="userPoints">0</span></div>
-<button class="reset-btn" onclick="resetData()">Reset Data</button>
-</div>
+  <!-- Points + Reset -->
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+    <div class="points-pill">Your Points: <span id="userPoints">0</span></div>
+    <button class="reset-btn" onclick="resetData()">Reset Data</button>
+  </div>
 
-<!-- HOME -->
-<section id="home" class="page active">
-<div class="card">
-<h2>Our Mission</h2>
-<p class="small">Make recycling effortless, rewarding and competitive for communities across Singapore.</p>
-</div>
+  <!-- HOME -->
+  <section id="home" class="page active">
+    <div class="card">
+      <h2>Our Mission</h2>
+      <p class="small">Make recycling effortless, rewarding and competitive for communities across Singapore.</p>
+    </div>
 
-<div class="card">
-<h2>Find Our Kiosks</h2>
-<div class="kiosk-grid">
-<div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-<div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-<div class="kiosk-item card" data-lat="1.4064" data-lon="103.9022" data-id="WP"><h3>Waterway Point</h3><p>83 Punggol Central, Singapore 828761</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-<div class="kiosk-item card" data-lat="1.3014" data-lon="103.9053" data-id="PP"><h3>Parkway Parade</h3><p>80 Marine Parade Rd, Singapore 449269</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-<div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
-</div>
-</div>
+    <div class="card">
+      <h2>Find Our Kiosks</h2>
+      <div class="kiosk-grid">
+        <div class="kiosk-item card" data-lat="1.3505" data-lon="103.8485" data-id="J8"><h3>Junction 8</h3><p>9 Bishan Pl, Singapore 579837</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+        <div class="kiosk-item card" data-lat="1.4294" data-lon="103.8358" data-id="NP"><h3>Northpoint City</h3><p>930 Yishun Ave 2, Singapore 769098</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+        <div class="kiosk-item card" data-lat="1.4064" data-lon="103.9022" data-id="WP"><h3>Waterway Point</h3><p>83 Punggol Central, Singapore 828761</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+        <div class="kiosk-item card" data-lat="1.3014" data-lon="103.9053" data-id="PP"><h3>Parkway Parade</h3><p>80 Marine Parade Rd, Singapore 449269</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+        <div class="kiosk-item card" data-lat="1.3340" data-lon="103.7426" data-id="WG"><h3>Westgate</h3><p>3 Gateway Dr, Singapore 608532</p><div class="kiosk-actions"><button onclick="openDirectionsFromEl(this)">Get Directions</button></div></div>
+      </div>
+    </div>
 
-<!-- Admin -->
-<div id="adminContent" class="card">
-<h2>Admin - QR & Code Generator</h2>
-<input type="password" id="passcode" placeholder="Enter passcode" /><br>
-<input type="number" id="qrPoints" min="1" placeholder="Points" /><br>
-<select id="qrLocation">
-<option value="J8">Junction 8</option><option value="NP">Northpoint City</option>
-<option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option>
-<option value="WG">Westgate</option></select><br>
-<input type="datetime-local" id="qrTime" /><br>
-<button onclick="generateQR()">Generate QR & Code</button>
-<div id="qrOutput" style="margin-top:0.6rem"></div>
-</div>
-</section>
+    <!-- Admin -->
+    <div id="adminContent" class="card">
+      <h2>Admin - QR & Code Generator</h2>
+      <input type="password" id="passcode" placeholder="Enter passcode" /><br>
+      <input type="number" id="qrPoints" min="1" placeholder="Points" /><br>
+      <select id="qrLocation">
+        <option value="J8">Junction 8</option><option value="NP">Northpoint City</option>
+        <option value="WP">Waterway Point</option><option value="PP">Parkway Parade</option>
+        <option value="WG">Westgate</option></select><br>
+      <input type="datetime-local" id="qrTime" /><br>
+      <button class="action-btn" onclick="generateQR()">Generate QR & Code</button>
+      <div id="qrOutput" style="margin-top:0.6rem;text-align:center"></div>
+    </div>
+  </section>
 
-<!-- SCAN -->
-<section id="scan" class="page">
-<div class="card">
-<h2>Scan QR Code</h2>
-<p class="small">Allow camera access and align QR code in the frame. The scanner stops after one valid scan.</p>
-<div class="scan-wrap">
-<div class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
-<div class="scan-controls"><button onclick="startScanner()">Start</button><button onclick="stopScanner()">Stop</button></div>
-<div id="scanResult" class="scan-result muted">No scan yet.</div>
-</div>
-</div>
-</section>
+  <!-- SCAN -->
+  <section id="scan" class="page">
+    <div class="card">
+      <h2>Scan QR Code</h2>
+      <p class="small">Allow camera access and align QR code in the frame. The scanner stops after one valid scan.</p>
+      <div class="scan-wrap">
+        <div class="video-wrap"><video id="preview" autoplay muted playsinline></video><canvas id="overlay"></canvas></div>
+        <div class="scan-controls">
+          <button class="action-btn" onclick="startScanner()">Start</button>
+          <button class="action-btn" onclick="stopScanner()">Stop</button>
+        </div>
+        <div id="scanResult" class="scan-result muted">No scan yet.</div>
+      </div>
+    </div>
+  </section>
 
-<!-- REDEEM -->
-<section id="redeem" class="page">
-<div class="card">
-<h2>Redeem Vouchers</h2>
-<div class="voucher-grid">
-<div class="voucher-card" data-company="ABC" data-cost="100"><strong>CompanyABC</strong><div>10% off min $10 (100 pts)</div><button onclick="redeemVoucher(this)" data-company="ABC" data-cost="100">Redeem</button><div class="barcode-target"></div></div>
-<div class="voucher-card" data-company="DEF" data-cost="500"><strong>CompanyDEF</strong><div>$3 discount (500 pts)</div><button onclick="redeemVoucher(this)" data-company="DEF" data-cost="500">Redeem</button><div class="barcode-target"></div></div>
-<div class="voucher-card" data-company="GHI" data-cost="1000"><strong>CompanyGHI</strong><div>Free item (1000 pts)</div><button onclick="redeemVoucher(this)" data-company="GHI" data-cost="1000">Redeem</button><div class="barcode-target"></div></div>
-</div>
-</div>
-</section>
+  <!-- REDEEM -->
+  <section id="redeem" class="page">
+    <div class="card">
+      <h2>Redeem Vouchers</h2>
+      <div class="voucher-grid">
+        <div class="voucher-card" data-company="ABC" data-cost="100"><strong>CompanyABC</strong><div>10% off min $10 (100 pts)</div>
+          <div class="voucher-actions"><button class="action-btn" onclick="redeemVoucher(this)" data-company="ABC" data-cost="100">Redeem</button></div><div class="barcode-target"></div></div>
+        <div class="voucher-card" data-company="DEF" data-cost="500"><strong>CompanyDEF</strong><div>$3 discount (500 pts)</div>
+          <div class="voucher-actions"><button class="action-btn" onclick="redeemVoucher(this)" data-company="DEF" data-cost="500">Redeem</button></div><div class="barcode-target"></div></div>
+        <div class="voucher-card" data-company="GHI" data-cost="1000"><strong>CompanyGHI</strong><div>Free item (1000 pts)</div>
+          <div class="voucher-actions"><button class="action-btn" onclick="redeemVoucher(this)" data-company="GHI" data-cost="1000">Redeem</button></div><div class="barcode-target"></div></div>
+      </div>
+    </div>
+  </section>
 
-<!-- LEADERBOARD -->
-<section id="leaderboard" class="page">
-<div class="card">
-<h2>Kiosk Leaderboard</h2>
-<table class="leaderboard-table" style="width:100%">
-<thead><tr><th>Rank</th><th>Kiosk</th><th>Total Points</th></tr></thead>
-<tbody id="leaderboardBody"></tbody>
-</table>
-</div>
-</section>
+  <!-- LEADERBOARD -->
+  <section id="leaderboard" class="page">
+    <div class="card">
+      <h2>Kiosk Leaderboard</h2>
+      <table class="leaderboard-table">
+        <thead><tr><th>#</th><th>Kiosk</th><th>Total Points</th></tr></thead>
+        <tbody id="leaderboardBody"></tbody>
+      </table>
+    </div>
+  </section>
 </main>
 </div>
 
 <script>
-/* Cookie helpers */
-function setCookie(name,value,days=365){const d=new Date();d.setTime(d.getTime()+days*86400000);document.cookie=`${name}=${encodeURIComponent(value)};expires=${d.toUTCString()};path=/`}
-function getCookie(name){const c=document.cookie.split('; ').find(row=>row.startsWith(name+'='));return c?decodeURIComponent(c.split('=')[1]):null}
-function eraseCookie(name){document.cookie=name+'=;Max-Age=0;path=/'}
+function setCookie(n,v,d=365){const t=new Date();t.setTime(t.getTime()+d*86400000);document.cookie=`${n}=${encodeURIComponent(v)};expires=${t.toUTCString()};path=/`}
+function getCookie(n){const c=document.cookie.split('; ').find(r=>r.startsWith(n+'='));return c?decodeURIComponent(c.split('=')[1]):null}
+function eraseCookie(n){document.cookie=n+'=;Max-Age=0;path=/'}
 
-/* Global */
 const locations={J8:{name:'Junction 8'},NP:{name:'Northpoint City'},WP:{name:'Waterway Point'},PP:{name:'Parkway Parade'},WG:{name:'Westgate'}};
 function getUserPoints(){return parseInt(getCookie('userPoints'))||0}
 function setUserPoints(p){setCookie('userPoints',p);document.getElementById('userPoints').textContent=p}
-
-/* Reset data */
 function resetData(){if(confirm('Reset all data?')){['userPoints','leaderboardData'].forEach(eraseCookie);location.reload();}}
 
-/* Leaderboard */
-function initLeaderboard(){let d=getCookie('leaderboardData');if(!d){d={J8:15000+Math.random()*5000|0,NP:10000+Math.random()*5000|0,WP:12000+Math.random()*5000|0,PP:8000+Math.random()*5000|0,WG:13000+Math.random()*5000|0};setCookie('leaderboardData',JSON.stringify(d));return d;}return JSON.parse(d);}
+function initLeaderboard(){
+  let d=getCookie('leaderboardData');
+  if(!d){d={J8:15000+Math.random()*5000|0,NP:10000+Math.random()*5000|0,WP:12000+Math.random()*5000|0,PP:8000+Math.random()*5000|0,WG:13000+Math.random()*5000|0};
+    setCookie('leaderboardData',JSON.stringify(d));return d;}
+  return JSON.parse(d);
+}
 function updateLeaderboardData(loc,pts){const d=initLeaderboard();d[loc]=(d[loc]||0)+pts;setCookie('leaderboardData',JSON.stringify(d));}
-function displayLeaderboard(){const d=initLeaderboard();const arr=Object.entries(d).sort((a,b)=>b[1]-a[1]);const tb=document.getElementById('leaderboardBody');tb.innerHTML='';arr.forEach(([k,v],i)=>tb.innerHTML+=`<tr><td>#${i+1}</td><td>${locations[k].name}</td><td>${v.toLocaleString()} pts</td></tr>`);}
+function displayLeaderboard(){
+  const d=initLeaderboard();
+  const arr=Object.entries(d).sort((a,b)=>b[1]-a[1]);
+  const tb=document.getElementById('leaderboardBody');
+  tb.innerHTML='';
+  arr.forEach(([k,v],i)=>tb.innerHTML+=`<tr><td>${i+1}</td><td>${locations[k].name}</td><td>${v.toLocaleString()} pts</td></tr>`);
+}
 
-/* Navigation */
-document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active');if(b.dataset.page==='leaderboard')displayLeaderboard();});
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(b.dataset.page).classList.add('active');
+  if(b.dataset.page==='leaderboard')displayLeaderboard();
+});
 
-/* Directions */
-function openDirectionsFromEl(el){const k=el.closest('.kiosk-item');window.open(`https://www.google.com/maps/dir/?api=1&destination=${k.dataset.lat},${k.dataset.lon}`,'_blank');}
+function openDirectionsFromEl(el){
+  const k=el.closest('.kiosk-item');
+  window.open(`https://www.google.com/maps/dir/?api=1&destination=${k.dataset.lat},${k.dataset.lon}`,'_blank');
+}
 
 /* Scanner */
 let stream,scanTimer,scanning=false;
-async function startScanner(){stopScanner();try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const v=document.getElementById('preview');v.srcObject=stream;scanning=true;const c=document.getElementById('overlay'),ctx=c.getContext('2d');scanTimer=setInterval(()=>{if(!scanning)return;ctx.drawImage(v,0,0,c.width=v.videoWidth||420,c.height=v.videoHeight||280);const img=ctx.getImageData(0,0,c.width,c.height);const code=jsQR(img.data,img.width,img.height);if(code){handleQRResult(code.data);stopScanner();}},400);}catch(e){alert('Camera blocked.');}}
-function stopScanner(){scanning=false;if(scanTimer)clearInterval(scanTimer);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}}
-function handleQRResult(data){try{const o=JSON.parse(data);if(!o.location||!o.points)throw 0;const pts=parseInt(o.points);setUserPoints(getUserPoints()+pts);updateLeaderboardData(o.location,pts);document.getElementById('scanResult').innerHTML=`<div class='success'>+${pts} points from ${locations[o.location].name}!</div>`;}catch{alert('Invalid QR');}}
+async function startScanner(){
+  stopScanner();
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=document.getElementById('preview');
+    v.srcObject=stream;
+    scanning=true;
+    const c=document.getElementById('overlay'),ctx=c.getContext('2d');
+    scanTimer=setInterval(()=>{
+      if(!scanning)return;
+      ctx.drawImage(v,0,0,c.width=v.videoWidth||420,c.height=v.videoHeight||280);
+      const img=ctx.getImageData(0,0,c.width,c.height);
+      const code=jsQR(img.data,img.width,img.height);
+      if(code){handleQRResult(code.data);stopScanner();}
+    },400);
+  }catch(e){alert('Camera blocked.');}
+}
+function stopScanner(){
+  scanning=false;
+  if(scanTimer)clearInterval(scanTimer);
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+}
+function handleQRResult(data){
+  try{
+    const o=JSON.parse(data);
+    if(!o.location||!o.points)throw 0;
+    const pts=parseInt(o.points);
+    setUserPoints(getUserPoints()+pts);
+    updateLeaderboardData(o.location,pts);
+    document.getElementById('scanResult').innerHTML=`<div class='success'>+${pts} points from ${locations[o.location].name}!</div>`;
+  }catch{alert('Invalid QR');}
+}
 
 /* Redeem */
-async function redeemVoucher(btn){const cost=parseInt(btn.dataset.cost),co=btn.dataset.company;if(getUserPoints()<cost)return alert('Not enough points');setUserPoints(getUserPoints()-cost);const id='BC'+Math.random().toString(36).substr(2,8).toUpperCase();const t=btn.closest('.voucher-card').querySelector('.barcode-target');const box=document.createElement('div');box.className='barcode-area';box.innerHTML=`<svg></svg><div>${id}</div>`;t.appendChild(box);JsBarcode(box.querySelector('svg'),id,{format:"CODE128",displayValue:false});await new Promise(r=>setTimeout(r,300));const canvas=await html2canvas(box);const link=document.createElement('a');link.download=`${co}_${id}.png`;link.href=canvas.toDataURL();const dl=document.createElement('button');dl.className='download-btn';dl.textContent='Download';dl.onclick=()=>link.click();box.appendChild(dl);}
+async function redeemVoucher(btn){
+  const cost=parseInt(btn.dataset.cost),co=btn.dataset.company;
+  if(getUserPoints()<cost)return alert('Not enough points');
+  setUserPoints(getUserPoints()-cost);
+  const id='BC'+Math.random().toString(36).substr(2,8).toUpperCase();
+  const t=btn.closest('.voucher-card').querySelector('.barcode-target');
+  const box=document.createElement('div');
+  box.className='barcode-area';
+  box.innerHTML=`<svg></svg><div>${id}</div>`;
+  t.appendChild(box);
+  JsBarcode(box.querySelector('svg'),id,{format:"CODE128",displayValue:false});
+  await new Promise(r=>setTimeout(r,300));
+  const canvas=await html2canvas(box);
+  const link=document.createElement('a');
+  link.download=`${co}_${id}.png`;
+  link.href=canvas.toDataURL();
+  const dl=document.createElement('button');
+  dl.className='download-btn';
+  dl.textContent='Download';
+  dl.onclick=()=>link.click();
+  box.appendChild(dl);
+}
 
 /* Admin QR generator */
-function generateQR(){const pass=document.getElementById('passcode').value;if(pass!=='gimme250k')return alert('Wrong passcode');const pts=document.getElementById('qrPoints').value,loc=document.getElementById('qrLocation').value,time=document.getElementById('qrTime').value;const o={location:loc,points:pts,timestamp:time};const json=JSON.stringify(o);const out=document.getElementById('qrOutput');out.innerHTML='';const qrDiv=document.createElement('div');new QRCode(qrDiv,json);out.appendChild(qrDiv);const text=document.createElement('div');text.style.marginTop='0.5rem';text.textContent=json;out.appendChild(text);}
+function generateQR(){
+  const pass=document.getElementById('passcode').value;
+  if(pass!=='gimme250k')return alert('Wrong passcode');
+  const pts=document.getElementById('qrPoints').value,
+        loc=document.getElementById('qrLocation').value,
+        time=document.getElementById('qrTime').value;
+  const o={location:loc,points:pts,timestamp:time};
+  const json=JSON.stringify(o);
+  const out=document.getElementById('qrOutput');
+  out.innerHTML='';
+  const qrDiv=document.createElement('div');
+  new QRCode(qrDiv,json);
+  out.appendChild(qrDiv);
+}
 
 /* Init */
 setUserPoints(getUserPoints());displayLeaderboard();
